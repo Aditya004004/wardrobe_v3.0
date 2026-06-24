@@ -1,0 +1,92 @@
+## 🚀 Getting Started & Third-Party Setup
+
+Follow these steps to set up the external API keys, storage buckets, and database configurations required to compile and run the application locally.
+
+### 1. Secure Environment Setup (`local.properties`)
+To keep API keys secure, this project uses the `local.properties` file to inject credentials via `BuildConfig`. **The app will not compile without this file.**
+
+1. In Android Studio, navigate to the root directory of the project.
+2. Open (or create) the `local.properties` file.
+3. Add the following keys (you will generate these in the steps below):
+
+```properties
+CLOUDINARY_CLOUD_NAME=your_cloud_name_here
+CLOUDINARY_API_KEY=your_api_key_here
+CLOUDINARY_API_SECRET=your_api_secret_here
+FREEPIK_API_KEY=your_freepik_key_here
+Note: Do not use quotes around the values in this file.
+
+2. Firebase Configuration (Auth & Database)
+Firebase provides user authentication and real-time backend updates.
+
+Project Initialization:
+
+Go to the Firebase Console and create a new project.
+
+Register a new Android App using the exact package name: com.example.wardeobe.
+
+Download the generated google-services.json file.
+
+Move google-services.json into the app/ directory of your cloned repository.
+
+Authentication Setup:
+
+In the Firebase Console, go to Build > Authentication.
+
+Click Get Started, navigate to the Sign-in method tab.
+
+Select Email/Password, enable it, and save.
+
+Firestore Database Setup:
+
+Go to Build > Firestore Database and create your database instance.
+
+Navigate to the Rules tab and modify them to allow authenticated read/write access:
+
+JavaScript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+3. Cloudinary Setup (Media Management)
+Cloudinary is used to host and serve uploaded media files such as profile images and wardrobe items.
+
+Register or log in at Cloudinary.
+
+Go to your Dashboard to find your Cloud Name, API Key, and API Secret.
+
+Add these credentials to your local.properties file.
+
+Go to the Media Library tab and create a dedicated folder (e.g., wardrobe_uploads) to organize your app's assets.
+
+4. Freepik AI API Setup (Magnific AI Engine)
+This project uses the Freepik API via the Magnific engine to handle AI tasks like virtual try-on image generation.
+
+Go to Freepik Developers and log in.
+
+Navigate to your Developer Dashboard and generate a new API Key.
+
+Add this key to your local.properties file.
+
+Note: The application calls the gemini-2-5-flash-image-preview endpoint to process image tasks.
+
+5. Build & Run
+Once your local.properties and google-services.json files are in place:
+
+Open the project in Android Studio.
+
+Sync the project with Gradle files (this generates the BuildConfig class).
+
+Build and run the app on your emulator or physical device.
+
+Ensure your app-level build.gradle.kts includes the necessary plugins (like the Google Services plugin) to support Firebase services, networking, and image loading.
+
+
+***
+
+### A Quick Tip Before You Commit:
+Just remember to double-check that your `local.properties` file is listed inside your root `.gitignore`file before you push this to GitHub, so your new keys stay safe!
