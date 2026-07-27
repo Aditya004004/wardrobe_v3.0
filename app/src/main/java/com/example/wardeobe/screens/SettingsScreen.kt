@@ -103,11 +103,11 @@ fun SettingsScreen(
             item {
                 SettingCard(
                     title = "Clear Wardrobe",
-                    description = "Remove all uploaded clothing items",
-                    onClick = { /* TODO: clear logic */ },
+                    description = "Remove all uploaded clothing items (Coming Soon)",
+                    onClick = null, // Disabled until feature is implemented
                     trailing = {
-                        TextButton(onClick = { /* TODO: clear logic */ }) {
-                            Text("Clear", color = MaterialTheme.colorScheme.error)
+                        TextButton(onClick = { /* No action */ }, enabled = false) {
+                            Text("Coming Soon", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 )

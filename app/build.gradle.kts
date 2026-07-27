@@ -8,7 +8,15 @@ if (localPropertiesFile.exists()) {
     localProperties.load(localPropertiesFile.inputStream())
 }
 
+// Helper to enforce required properties at build time
+fun requireProp(key: String): String =
+    localProperties.getProperty(key) ?: error("Missing '$key' in local.properties — see README for setup.")
+
 plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("dagger.hilt.android.plugin")
+    id("org.jetbrains.kotlin.kapt")
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     // Applies the Google Services plugin defined in the project-level file
@@ -28,10 +36,10 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Expose keys to your Kotlin code
-        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${localProperties.getProperty("CLOUDINARY_CLOUD_NAME")}\"")
-        buildConfigField("String", "CLOUDINARY_API_KEY", "\"${localProperties.getProperty("CLOUDINARY_API_KEY")}\"")
-        buildConfigField("String", "CLOUDINARY_API_SECRET", "\"${localProperties.getProperty("CLOUDINARY_API_SECRET")}\"")
-        buildConfigField("String", "FREEPIK_API_KEY", "\"${localProperties.getProperty("FREEPIK_API_KEY")}\"")
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${requireProp("CLOUDINARY_CLOUD_NAME")}\"")
+        buildConfigField("String", "CLOUDINARY_API_KEY", "\"${requireProp("CLOUDINARY_API_KEY")}\"")
+        buildConfigField("String", "CLOUDINARY_API_SECRET", "\"${requireProp("CLOUDINARY_API_SECRET")}\"")
+        buildConfigField("String", "FREEPIK_API_KEY", "\"${requireProp("FREEPIK_API_KEY")}\"")
     }
 
     // ✅ STEP 4: Set NDK version for 16 KB page size alignment support
@@ -59,7 +67,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -105,6 +113,7 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-storage-ktx")
+    implementation("com.google.firebase:firebase-functions-ktx")
 
     // Coroutines (Kept standard version)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
@@ -121,12 +130,15 @@ dependencies {
         exclude(group = "com.cloudinary", module = "cloudinary-core")
     }
     implementation("com.cloudinary:cloudinary-android:2.4.0")
+    implementation("com.google.dagger:hilt-android:2.51")
+    kapt("com.google.dagger:hilt-compiler:2.51")
 
     // ---------------------------------------------------------------------
     // ✅ Core and Compose (Existing)
     // ---------------------------------------------------------------------
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
     implementation("androidx.activity:activity-compose:1.9.2")
 
     // Jetpack Compose
@@ -157,8 +169,16 @@ dependencies {
     // 🧪 Testing
     // ---------------------------------------------------------------------
     testImplementation("junit:junit:4.13.2")
+    // Coroutines test utilities
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    // Turbine for Flow testing
+    testImplementation("app.cash.turbine:turbine:1.1.0")
+    // MockK for mocking
+    testImplementation("io.mockk:mockk:1.13.11")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.09.02"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+
+    
 }

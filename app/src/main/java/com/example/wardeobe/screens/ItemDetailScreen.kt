@@ -24,7 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -48,7 +48,7 @@ fun ItemDetailScreen(
     onBack: () -> Unit
 ) {
     // Collects the list of items from the ViewModel state
-    val clothes by homeViewModel.wardrobeItems.collectAsState()
+    val clothes by homeViewModel.wardrobeItems.collectAsStateWithLifecycle()
 
     // Find the specific item by ID. Recalculates if the ID or the list changes.
     val item = remember(itemId, clothes) {

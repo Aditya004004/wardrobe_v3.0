@@ -3,7 +3,9 @@ package com.example.wardeobe
 import com.example.wardeobe.BuildConfig
 import android.app.Application
 import com.cloudinary.android.MediaManager
+import dagger.hilt.android.HiltAndroidApp
 
+@HiltAndroidApp
 class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()

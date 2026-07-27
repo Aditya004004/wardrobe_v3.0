@@ -23,6 +23,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.wardeobe.viewmodel.ProfileViewModel
@@ -36,7 +37,7 @@ fun ProfileScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val uiState by profileViewModel.uiState.collectAsState()
+    val uiState by profileViewModel.uiState.collectAsStateWithLifecycle()
 
     // 1. Image Picker/Upload Launcher
     val imagePicker = rememberLauncherForActivityResult(

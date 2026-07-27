@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,18 +34,11 @@ fun UploadScreen(
     onBack: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val uiState by uploadViewModel.uiState.collectAsState()
+    val uiState by uploadViewModel.uiState.collectAsStateWithLifecycle()
 
-    var selectedImageUri by remember {
-        mutableStateOf(initialImageUri?.let { Uri.parse(it) } ?: null)
-    }
-
-    // 🌟 NEW STATE: Selected category
-    var selectedCategory by remember { mutableStateOf("Top") } // Default Category
-
-    // 🌟 Category list + dropdown state
-    val categories = listOf("Top", "Bottom", "Outerwear", "Shoes", "Accessory")
-    var categoryMenuExpanded by remember { mutableStateOf(false) }
+    var selectedImageUri by rememberSaveable { mutableStateOf(initialImageUri?.let { Uri.parse(it) } ?: null) }
+    var selectedCategory by rememberSaveable { mutableStateOf("Top") } // Default Category
+    var categoryMenuExpanded by rememberSaveable { mutableStateOf(false) }
 
     // 🔸 Image picker launcher (if user chooses Gallery later)
     val galleryLauncher = rememberLauncherForActivityResult(

@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.example.wardeobe.viewmodel.OutfitViewModel
 
@@ -34,7 +35,7 @@ fun ProfileSetupScreen(
     onBack: () -> Unit,
     navController: NavHostController
 ) {
-    val profile by viewModel.userProfile.collectAsState()
+    val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     // 🌟 FIX 1: Create local, mutable state for Occasion and Style (already done)

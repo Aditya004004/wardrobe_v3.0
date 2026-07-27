@@ -6,6 +6,8 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.example.wardeobe.model.UserModel
 import com.cloudinary.Cloudinary
 import com.cloudinary.utils.ObjectUtils
@@ -23,7 +25,8 @@ import java.io.IOException
 import java.util.UUID
 
 
-class ProfileViewModel : ViewModel() {
+@HiltViewModel
+class ProfileViewModel @Inject constructor() : ViewModel() {
 
     private val auth = Firebase.auth
     private val firestore = Firebase.firestore

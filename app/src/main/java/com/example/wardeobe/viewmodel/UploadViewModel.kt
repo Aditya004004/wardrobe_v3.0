@@ -7,6 +7,8 @@ import android.util.Base64
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.cloudinary.Cloudinary
 import com.cloudinary.utils.ObjectUtils
 import com.google.firebase.auth.ktx.auth
@@ -27,18 +29,21 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
+import com.example.wardeobe.repository.DeleteTokenRepository
 
 /**
  * Handles image upload, AI processing (Freepik Gemini), and Cloudinary upload.
  */
-class UploadViewModel : ViewModel() {
+@HiltViewModel
+class UploadViewModel @Inject constructor(
+    private val repository: com.example.wardeobe.data.WardrobeRepository
+) : ViewModel() {
 
     // 🌟 Storage for delete tokens (used for secure client-side deletion of new items)
-    val deleteTokenMap = ConcurrentHashMap<String, String>()
+    // Delete tokens are now stored in DeleteTokenRepository
 
     // ⚠️ WARNING: Hardcoded API Key (Should be secured in production)
-    private val FREEPIK_API_KEY = "FPSX8d606aae7e9c45b4ada2fc6d6c6731fc"
+    private val FREEPIK_API_KEY = BuildConfig.FREEPIK_API_KEY
     private val FREEPIK_ENDPOINT = "https://api.magnific.com/v1/ai/gemini-2-5-flash-image-preview"
 
     // ⚠️ WARNING: Cloudinary Configuration
@@ -101,7 +106,7 @@ class UploadViewModel : ViewModel() {
                 }
 
                 // 🌟 Store the delete token
-                deleteTokenMap[publicId] = deleteToken
+                DeleteTokenRepository.deleteTokenMap[publicId] = deleteToken
 
                 withContext(Dispatchers.Main) {
                     _uiState.value = UploadUiState(
@@ -119,30 +124,17 @@ class UploadViewModel : ViewModel() {
         }
     }
 
-    // 🔁 Converts image URI to Base64
-    private suspend fun uriToBase64(context: Context, uri: Uri): String? =
-        withContext(Dispatchers.IO) {
-            var inputStream: InputStream? = null
-            try {
-                inputStream = context.contentResolver.openInputStream(uri)
-                val buffer = ByteArrayOutputStream()
-                val data = ByteArray(1024)
-                var bytesRead: Int
-                while (inputStream?.read(data).also { bytesRead = it ?: -1 } != -1) {
-                    buffer.write(data, 0, bytesRead)
-                }
-                Base64.encodeToString(buffer.toByteArray(), Base64.DEFAULT)
-            } catch (e: Exception) {
-                Log.e("UploadViewModel", "Base64 conversion failed", e)
-                null
-            } finally {
-                try {
-                    inputStream?.close()
-                } catch (e: IOException) {
-                    Log.e("UploadViewModel", "Failed to close stream: ${e.message}")
-                }
-            }
+    // 🔁 Converts image URI to Base64 using compressed image bytes
+    private suspend fun uriToBase64(context: Context, uri: Uri): String? = withContext(Dispatchers.IO) {
+        try {
+            val compressed = com.example.wardeobe.util.ImageCompressor.compressImage(context, uri)
+                ?: return@withContext null
+            Base64.encodeToString(compressed, Base64.DEFAULT)
+        } catch (e: Exception) {
+            Log.e("UploadViewModel", "Base64 conversion failed", e)
+            null
         }
+    }
 
     // 🤖 Generate AI image using Freepik Gemini
     private suspend fun generateWithFreepik(base64Image: String): String? =

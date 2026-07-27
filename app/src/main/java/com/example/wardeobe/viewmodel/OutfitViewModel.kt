@@ -4,6 +4,8 @@ import com.example.wardeobe.BuildConfig
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.example.wardeobe.model.ClothingItem
 import com.example.wardeobe.model.RecommendedOutfit
 import com.example.wardeobe.model.UserProfile
@@ -31,9 +33,11 @@ import com.cloudinary.utils.ObjectUtils
 import android.content.Context
 import java.util.UUID
 
-class OutfitViewModel(
-    val profileViewModel: ProfileViewModel,
-    private val uploadViewModel: UploadViewModel
+@HiltViewModel
+class OutfitViewModel @Inject constructor(
+    private val profileViewModel: ProfileViewModel,
+    private val uploadViewModel: UploadViewModel,
+    private val repository: com.example.wardeobe.data.WardrobeRepository
 ) : ViewModel() {
 
     private val FREEPIK_API_KEY = BuildConfig.FREEPIK_API_KEY
@@ -280,20 +284,8 @@ class OutfitViewModel(
         }
 
     private fun cleanUpTemporaryGarment(publicId: String) {
-        val cloudinary = Cloudinary(
-            ObjectUtils.asMap(
-                "cloud_name", BuildConfig.CLOUDINARY_CLOUD_NAME,
-                "api_key", BuildConfig.CLOUDINARY_API_KEY,
-                "api_secret", BuildConfig.CLOUDINARY_API_SECRET
-            )
-        )
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap())
-                Log.d("OutfitViewModel", "Cleaned up temporary garment: $publicId")
-            } catch (e: Exception) {
-                Log.e("OutfitViewModel", "Failed to delete temp garment: $publicId, error: ${e.message}")
-            }
+            repository.deleteTemporaryGarment(publicId)
         }
     }
 

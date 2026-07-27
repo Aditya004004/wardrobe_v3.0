@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -25,7 +26,7 @@ fun VtoGarmentSelectionScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val isLoading = viewModel.isGeneratingVTO.collectAsState()
+    val isLoading = viewModel.isGeneratingVTO.collectAsStateWithLifecycle()
 
     // 1. Gallery Launcher to pick the garment image
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -41,8 +42,12 @@ fun VtoGarmentSelectionScreen(
     }
 
     // Launch the gallery picker immediately when the screen appears
-    LaunchedEffect(Unit) {
-        galleryLauncher.launch("image/*")
+    val hasLaunched = rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(hasLaunched.value) {
+        if (!hasLaunched.value) {
+            galleryLauncher.launch("image/*")
+            hasLaunched.value = true
+        }
     }
 
     Scaffold(

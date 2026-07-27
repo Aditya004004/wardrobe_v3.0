@@ -23,6 +23,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,8 +53,8 @@ fun AuthScreen(
     var password by remember { mutableStateOf("") }
     var isLoginMode by remember { mutableStateOf(true) } // State to toggle between Login and Register
 
-    val isLoading by authViewModel.isLoading.collectAsState()
-    val authResult by authViewModel.authResult.collectAsState()
+    val isLoading by authViewModel.isLoading.collectAsStateWithLifecycle()
+    val authResult by authViewModel.authResult.collectAsStateWithLifecycle()
 
     // Handle Authentication Result and Navigation
     LaunchedEffect(authResult) {
