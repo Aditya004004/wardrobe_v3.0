@@ -5,9 +5,6 @@ import kotlinx.coroutines.CancellationException
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.wardeobe.model.ClothingItem
 import kotlinx.coroutines.tasks.await
-import com.cloudinary.Cloudinary
-import com.cloudinary.utils.ObjectUtils
-import com.example.wardeobe.BuildConfig
 import android.util.Log
 
 class WardrobeRepository(

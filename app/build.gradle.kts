@@ -27,11 +27,11 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.wardeobe"
+        applicationId = "com.wardrobe.app"
         minSdk = 25
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Expose keys to your Kotlin code
@@ -77,7 +77,8 @@ android {
 
     buildTypes {
         release {
-            if (localProperties.getProperty("KEYSTORE_FILE") != null || System.getenv("KEYSTORE_FILE") != null) {
+            val keystorePath = localProperties.getProperty("KEYSTORE_FILE") ?: System.getenv("KEYSTORE_FILE")
+            if (keystorePath != null && rootProject.file(keystorePath).exists()) {
                 signingConfig = signingConfigs.getByName("release")
             } else {
                 signingConfig = signingConfigs.getByName("debug")
@@ -157,7 +158,6 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material:material-icons-extended:1.7.0")
-    implementation(libs.androidx.compose.material) // Make sure this matches your Version Catalog if using one
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     // Navigation
@@ -173,8 +173,6 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     implementation("org.json:json:20240303")
-    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
-    implementation("com.google.accompanist:accompanist-swiperefresh:0.32.0")
 
     // ---------------------------------------------------------------------
     // 🧪 Testing

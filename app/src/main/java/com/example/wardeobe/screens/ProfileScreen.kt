@@ -24,7 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.wardeobe.viewmodel.ProfileViewModel
 import com.example.wardeobe.viewmodel.UploadViewModel // Used for image handling
@@ -32,8 +32,8 @@ import com.example.wardeobe.viewmodel.UploadViewModel // Used for image handling
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    profileViewModel: ProfileViewModel = viewModel(),
-    uploadViewModel: UploadViewModel = viewModel(), // Reused for image conversion helpers if needed
+    profileViewModel: ProfileViewModel = hiltViewModel(),
+    uploadViewModel: UploadViewModel = hiltViewModel(), // Reused for image conversion helpers if needed
     onBack: () -> Unit
 ) {
     val context = LocalContext.current

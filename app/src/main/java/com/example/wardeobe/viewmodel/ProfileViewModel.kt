@@ -1,6 +1,5 @@
 package com.example.wardeobe.viewmodel
 
-import com.example.wardeobe.BuildConfig
 import kotlinx.coroutines.CancellationException
 import android.content.Context
 import android.net.Uri
@@ -10,11 +9,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.example.wardeobe.model.UserModel
-import com.cloudinary.Cloudinary
-import com.cloudinary.utils.ObjectUtils
-import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,10 +27,9 @@ import com.google.firebase.functions.FirebaseFunctions
 class ProfileViewModel @Inject constructor(
     private val profileRepository: com.example.wardeobe.data.ProfileRepository,
     private val functions: FirebaseFunctions,
-    private val auth: com.google.firebase.auth.FirebaseAuth
+    private val auth: com.google.firebase.auth.FirebaseAuth,
+    private val firestore: com.google.firebase.firestore.FirebaseFirestore
 ) : ViewModel() {
-
-    private val firestore = Firebase.firestore
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState = _uiState.asStateFlow()
@@ -134,7 +128,7 @@ class ProfileViewModel @Inject constructor(
             "profilePictureUrl" to url,
             "profilePicturePublicId" to publicId
         )
-        userRef.update(updates as Map<String, Any>).await()
+        userRef.update(updates as Map<String, Any?>).await()
     }
 
     // --- Deletion Logic ---
@@ -160,7 +154,7 @@ class ProfileViewModel @Inject constructor(
                     "profilePictureUrl" to null,
                     "profilePicturePublicId" to null
                 )
-                userRef.update(updates as Map<String, Any>).await()
+                userRef.update(updates as Map<String, Any?>).await()
 
                 withContext(Dispatchers.Main) {
                     _uiState.value = _uiState.value.copy(

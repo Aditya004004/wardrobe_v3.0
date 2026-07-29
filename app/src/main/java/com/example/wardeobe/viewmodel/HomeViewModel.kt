@@ -6,8 +6,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.wardeobe.data.WardrobeRepository
 import com.example.wardeobe.model.ClothingItem
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -48,6 +46,10 @@ class HomeViewModel @Inject constructor(
 
     val selectedCategory: StateFlow<String> = _selectedCategory
 
+    fun clearWardrobe() {
+        _wardrobeItems.value = emptyList()
+        _uiState.value = WardrobeUiState.Empty
+    }
     fun setFilterCategory(category: String) {
         _selectedCategory.value = category
     }

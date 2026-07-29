@@ -91,8 +91,7 @@ fun ItemDetailScreen(
     ) { paddingValues ->
         if (item == null) {
             Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-                Text("Item not found or recently deleted.", modifier = Modifier.offset(y = 50.dp))
+                Text("Item not found or recently deleted.")
             }
             return@Scaffold
         }

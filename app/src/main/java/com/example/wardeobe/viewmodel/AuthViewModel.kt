@@ -46,55 +46,55 @@ class AuthViewModel @Inject constructor(
 
     fun registerUser(email: String, password: String) {
         _isLoading.value = true
-        viewModelScope.launch {
-            try {
-                auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        val userId = auth.currentUser?.uid ?: return@addOnCompleteListener
-                        val userData = hashMapOf(
-                            "userId" to userId,
-                            "email" to email,
-                            "profilePictureUrl" to null
-                        )
-                        db.collection("users").document(userId).set(userData)
-                            .addOnSuccessListener {
-                                _authResult.value = AuthResult.Success
+        try {
+            auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val userId = auth.currentUser?.uid ?: return@addOnCompleteListener
+                    val userData = hashMapOf(
+                        "userId" to userId,
+                        "email" to email,
+                        "profilePictureUrl" to null
+                    )
+                    db.collection("users").document(userId).set(userData)
+                        .addOnSuccessListener {
+                            _authResult.value = AuthResult.Success
+                        }
+                        .addOnFailureListener { e ->
+                            auth.currentUser?.delete()?.addOnCompleteListener {
+                                _authResult.value = AuthResult.Error("Registration failed: Could not setup profile. Please try again.")
+                                Log.e("AuthViewModel", "Firestore save failed, user rolled back: $e")
                             }
-                            .addOnFailureListener { e ->
-                                auth.currentUser?.delete()?.addOnCompleteListener {
-                                    _authResult.value = AuthResult.Error("Registration failed: Could not setup profile. Please try again.")
-                                    Log.e("AuthViewModel", "Firestore save failed, user rolled back: $e")
-                                }
-                            }
-                    } else {
-                        _authResult.value = AuthResult.Error("Registration failed: ${task.exception?.message}")
-                    }
-                    _isLoading.value = false
+                        }
+                } else {
+                    Log.e("AuthViewModel", "Registration failed", task.exception)
+                    _authResult.value = AuthResult.Error("Registration failed. Please check your details and try again.")
                 }
-            } catch (e: CancellationException) { throw e } catch (e: Exception) {
-                _authResult.value = AuthResult.Error("Registration failed: ${e.message}")
                 _isLoading.value = false
             }
+        } catch (e: CancellationException) { throw e } catch (e: Exception) {
+            Log.e("AuthViewModel", "Registration failed with exception", e)
+            _authResult.value = AuthResult.Error("Registration failed due to a network or system error.")
+            _isLoading.value = false
         }
     }
 
     fun loginUser(email: String, password: String) {
         _isLoading.value = true
-        viewModelScope.launch {
-            auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    _authResult.value = AuthResult.Success
-                } else {
-                    _authResult.value = AuthResult.Error("Login failed: ${task.exception?.message}")
-                }
-                _isLoading.value = false
+        auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                _authResult.value = AuthResult.Success
+            } else {
+                Log.e("AuthViewModel", "Login failed", task.exception)
+                _authResult.value = AuthResult.Error("Login failed. Please check your email and password.")
             }
+            _isLoading.value = false
         }
     }
 
     // 🌟 NEW: Logout Functionality
     fun logout() {
         auth.signOut()
+        profileRepository.clear()
         _authResult.value = AuthResult.LoggedOut
         // We typically clear the global current user here too, if using a global singleton:
         // MyApplication.currentUser = null

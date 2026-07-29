@@ -19,7 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.example.wardeobe.viewmodel.OutfitViewModel
@@ -31,7 +31,7 @@ import androidx.compose.material3.AssistChipDefaults
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileSetupScreen(
-    viewModel: OutfitViewModel = viewModel(),
+    viewModel: OutfitViewModel = hiltViewModel(),
     onBack: () -> Unit,
     navController: NavHostController
 ) {

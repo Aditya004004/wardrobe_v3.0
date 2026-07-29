@@ -1,6 +1,5 @@
 package com.example.wardeobe.viewmodel
 
-import com.example.wardeobe.BuildConfig
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -26,10 +25,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import android.util.Log
 import android.net.Uri
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
-import com.cloudinary.Cloudinary
-import com.cloudinary.utils.ObjectUtils
 import android.content.Context
 import java.util.UUID
 
@@ -71,10 +66,6 @@ class OutfitViewModel @Inject constructor(
     private val _hasProfilePicture = MutableStateFlow(false)
     val hasProfilePicture: StateFlow<Boolean> = _hasProfilePicture.asStateFlow()
 
-    private var cachedProfileUrl: String? = null
-
-    private val client = OkHttpClient()
-
     init {
         viewModelScope.launch {
             val uid = auth.currentUser?.uid
@@ -82,7 +73,6 @@ class OutfitViewModel @Inject constructor(
                 profileRepository.fetchProfilePictureUrl(uid)
             }
             profileRepository.profilePictureUrl.collect { url ->
-                cachedProfileUrl = url.ifEmpty { null }
                 _hasProfilePicture.value = url.isNotEmpty()
             }
         }
@@ -108,11 +98,7 @@ class OutfitViewModel @Inject constructor(
         _isGeneratingVTO.value = true
 
         viewModelScope.launch {
-            val uid = auth.currentUser?.uid
-            if (uid != null) {
-                profileRepository.fetchProfilePictureUrl(uid)
-            }
-            val profileUrl = cachedProfileUrl
+            val profileUrl = profileRepository.profilePictureUrl.value.ifEmpty { null }
 
             val uploadResult = repository.uploadTemporaryGarment(context, garmentUri)
             val publicGarmentUrl = uploadResult?.get("secure_url") as? String
@@ -146,15 +132,10 @@ class OutfitViewModel @Inject constructor(
         _isGeneratingShoppingOutfit.value = true
 
         viewModelScope.launch {
-            val uid = auth.currentUser?.uid
-            if (uid != null) {
-                profileRepository.fetchProfilePictureUrl(uid)
-            }
+            val profileUrl = profileRepository.profilePictureUrl.value.ifEmpty { null }
             val shopUrl = generateNewOutfitWithFreepik()
             _shoppingImageUrl.value = shopUrl
             _isGeneratingShoppingOutfit.value = false
-
-            val profileUrl = cachedProfileUrl
             if (!shopUrl.isNullOrEmpty() && !profileUrl.isNullOrEmpty()) {
                 startVtoGeneration(shopUrl, profileUrl)
             }
@@ -244,10 +225,10 @@ class OutfitViewModel @Inject constructor(
             val url = _vtoImageUrl.value ?: _shoppingImageUrl.value
             if (url == null) return RecommendedOutfit(null, null, "Error retrieving image URL.", false)
 
-            val shoppingText = if (cachedProfileUrl.isNullOrEmpty()) {
-                "Your AI look shown in a standard flat lay."
-            } else {
+            val shoppingText = if (_hasProfilePicture.value) {
                 "Your personalized AI try-on look has been generated!"
+            } else {
+                "Your AI look shown in a standard flat lay."
             }
 
             val generatedItem = ClothingItem(

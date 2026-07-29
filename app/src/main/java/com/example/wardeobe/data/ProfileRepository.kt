@@ -30,4 +30,8 @@ class ProfileRepository @Inject constructor(
     fun updateProfilePictureUrl(url: String) {
         _profilePictureUrl.value = url
     }
+
+    fun clear() {
+        _profilePictureUrl.value = ""
+    }
 }

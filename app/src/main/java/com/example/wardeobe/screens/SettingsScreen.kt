@@ -26,6 +26,8 @@ fun SettingsScreen(
     // 🌟 FIX 1: Add new navigation callback for logging out
     onLogout: () -> Unit
 ) {
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -100,37 +102,6 @@ fun SettingsScreen(
                 )
             }
 
-            // 🧹 Clear Wardrobe
-            item {
-                SettingCard(
-                    title = "Clear Wardrobe",
-                    description = "Remove all uploaded clothing items (Coming Soon)",
-                    onClick = null, // Disabled until feature is implemented
-                    trailing = {
-                        TextButton(onClick = { /* No action */ }, enabled = false) {
-                            Text("Coming Soon", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                )
-            }
-
-            // 📤 Manage Cloud Storage
-            item {
-                SettingCard(
-                    title = "Manage Cloudinary Storage",
-                    description = "Check your uploaded images online",
-                    onClick = { /* TODO: open Cloudinary link */ },
-                    trailing = {
-                        IconButton(onClick = { /* TODO: open Cloudinary link */ }) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_fashion_placeholder),
-                                contentDescription = "Cloud"
-                            )
-                        }
-                    }
-                )
-            }
-
             // ℹ️ About
             item {
                 SettingCard(
@@ -145,7 +116,7 @@ fun SettingsScreen(
                 SettingCard(
                     title = "Log Out",
                     description = "Sign out of your current account.",
-                    onClick = onLogout, // 🌟 Call the new logout action
+                    onClick = { showLogoutDialog = true }, // 🌟 Open dialog
                     trailing = {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_logout_placeholder), // Assuming a new logout icon
@@ -156,6 +127,29 @@ fun SettingsScreen(
                 )
             }
         }
+    }
+
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Log Out") },
+            text = { Text("Are you sure you want to log out of your account?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        onLogout()
+                    }
+                ) {
+                    Text("Log Out", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 

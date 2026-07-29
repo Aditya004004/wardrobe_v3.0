@@ -54,7 +54,16 @@ fun OutfitDisplayScreen(
     val hasProfilePic by viewModel.hasProfilePicture.collectAsStateWithLifecycle()
 
     // Note: RecommendedOutfit logic is primarily for personal wardrobe matching
-    val recommendedOutfit = remember(fullWardrobe) {
+    val recommendationType by viewModel.recommendationType.collectAsStateWithLifecycle()
+    val recommendedOutfit = remember(
+        fullWardrobe,
+        isGeneratingShop,
+        shopImageUrl,
+        isGeneratingVTO,
+        vtoImageUrl,
+        hasProfilePic,
+        recommendationType
+    ) {
         viewModel.getRecommendedOutfit(fullWardrobe)
     }
 

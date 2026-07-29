@@ -54,6 +54,12 @@ fun HomeScreen(
     val uiState by homeViewModel.uiState.collectAsStateWithLifecycle()
 
     var selectedTab by remember { mutableStateOf("home") }
+    
+    // Reset tab selection when returning to HomeScreen
+    LaunchedEffect(Unit) {
+        selectedTab = "home"
+    }
+    
     var menuExpanded by remember { mutableStateOf(false) }
 
     val categories = listOf("All", "Top", "Bottom", "Outerwear", "Shoes", "Accessory")

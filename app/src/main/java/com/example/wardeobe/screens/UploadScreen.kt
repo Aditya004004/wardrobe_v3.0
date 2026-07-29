@@ -21,7 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.wardeobe.R
 import com.example.wardeobe.viewmodel.UploadViewModel
@@ -29,7 +29,7 @@ import com.example.wardeobe.viewmodel.UploadViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UploadScreen(
-    uploadViewModel: UploadViewModel = viewModel(),
+    uploadViewModel: UploadViewModel = hiltViewModel(),
     initialImageUri: String?, // Receives URI string from navigation
     onBack: () -> Unit = {}
 ) {

@@ -37,14 +37,9 @@ fun AppNavGraph(
     onThemeToggled: (Boolean) -> Unit
 ) {
     // 1. Instantiate ViewModels
-    val uploadViewModel: UploadViewModel = hiltViewModel()
-    val authViewModel: AuthViewModel = hiltViewModel()
-    val profileViewModel: ProfileViewModel = hiltViewModel()
-    val homeViewModel: HomeViewModel = hiltViewModel()
-    val outfitViewModel: OutfitViewModel = hiltViewModel()
-
+                    
     // Determine starting route based on login status
-    val startRoute = if (authViewModel.isUserLoggedIn()) "home" else "auth"
+    val startRoute = if (com.google.firebase.auth.FirebaseAuth.getInstance().currentUser != null) "home" else "auth"
 
     NavHost(
         navController = navController,
@@ -53,7 +48,7 @@ fun AppNavGraph(
         // 🚨 Authentication Screen
         composable("auth") {
             AuthScreen(
-                authViewModel = authViewModel,
+                authViewModel = hiltViewModel(),
                 onAuthSuccess = {
                     navController.navigate("home") {
                         popUpTo("auth") { inclusive = true }
@@ -65,7 +60,7 @@ fun AppNavGraph(
         // 🏠 Home Screen (Updated with VTO navigation)
         composable("home") {
             HomeScreen(
-                homeViewModel = homeViewModel,
+                homeViewModel = hiltViewModel(),
                 onNavigateToUpload = { navController.navigate("upload?imageUri=null") },
                 onNavigateToSettings = { navController.navigate("settings") },
                 onNavigateToCreateOutfit = { navController.navigate("profile_setup") },
@@ -94,7 +89,7 @@ fun AppNavGraph(
             val imageUri = backStackEntry.arguments?.getString("imageUri")
 
             UploadScreen(
-                uploadViewModel = uploadViewModel,
+                uploadViewModel = hiltViewModel(),
                 initialImageUri = imageUri,
                 onBack = { navController.popBackStack() }
             )
@@ -103,7 +98,7 @@ fun AppNavGraph(
         // 🚨 VTO GARMENT SELECTION ROUTE (Local Flow Start)
         composable("select_garment_vto") {
             VtoGarmentSelectionScreen( // Use the dedicated selection screen
-                viewModel = outfitViewModel,
+                viewModel = hiltViewModel(),
                 onBack = { navController.popBackStack() },
                 // FIX: Navigate to the VTO display route, passing the local garment URI
                 onNavigateToOutfitDisplay = { uri ->
@@ -123,6 +118,7 @@ fun AppNavGraph(
         ) { backStackEntry ->
             val garmentUriString = backStackEntry.arguments?.getString("garmentUri")
             val context = LocalContext.current // 🌟 FIX: Get Context inside the Composable scope
+            val outfitViewModel: OutfitViewModel = hiltViewModel()
 
             // Trigger VTO generation immediately using the local URI
             LaunchedEffect(garmentUriString) {
@@ -135,9 +131,9 @@ fun AppNavGraph(
             // Display the OutfitDisplayScreen with the local VTO mode
             OutfitDisplayScreen(
                 mode = com.example.wardeobe.screens.OutfitMode.VTO_LOCAL,
-                viewModel = outfitViewModel,
+                viewModel = hiltViewModel(),
                 onBack = { navController.popBackStack() },
-                homeViewModel = homeViewModel
+                homeViewModel = hiltViewModel()
             )
         }
 
@@ -159,8 +155,8 @@ fun AppNavGraph(
         // Profile Picture/VTO Setup Screen Route (Remains unchanged)
         composable("profile_view") {
             ProfileScreen(
-                profileViewModel = profileViewModel,
-                uploadViewModel = uploadViewModel,
+                profileViewModel = hiltViewModel(),
+                uploadViewModel = hiltViewModel(),
                 onBack = { navController.popBackStack() }
             )
         }
@@ -173,7 +169,7 @@ fun AppNavGraph(
                 onDarkModeToggled = onThemeToggled,
                 onNavigateToProfileView = { navController.navigate("profile_view") },
                 onLogout = {
-                    authViewModel.logout()
+                    com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
                     navController.navigate("auth") {
                         popUpTo(navController.graph.id) { inclusive = true }
                     }
@@ -184,7 +180,7 @@ fun AppNavGraph(
         // 📝 User Profile Setup Screen (Remains unchanged)
         composable("profile_setup") {
             ProfileSetupScreen(
-                viewModel = outfitViewModel,
+                viewModel = hiltViewModel(),
                 onBack = { navController.popBackStack() },
                 navController = navController
             )
@@ -199,7 +195,7 @@ fun AppNavGraph(
             if (itemId != null) {
                 ItemDetailScreen(
                     itemId = itemId,
-                    homeViewModel = homeViewModel,
+                    homeViewModel = hiltViewModel(),
                     onBack = { navController.popBackStack() }
                 )
             } else {
@@ -214,9 +210,9 @@ fun AppNavGraph(
             val mode = try { com.example.wardeobe.screens.OutfitMode.valueOf(modeString.uppercase()) } catch (e: Exception) { com.example.wardeobe.screens.OutfitMode.CREATE }
             OutfitDisplayScreen(
                 mode = mode,
-                viewModel = outfitViewModel,
+                viewModel = hiltViewModel(),
                 onBack = { navController.popBackStack() },
-                homeViewModel = homeViewModel
+                homeViewModel = hiltViewModel()
             )
         }
     }
