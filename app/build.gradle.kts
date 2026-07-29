@@ -15,10 +15,9 @@ fun requireProp(key: String): String =
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("dagger.hilt.android.plugin")
+    id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.dagger.hilt.android")
     id("org.jetbrains.kotlin.kapt")
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     // Applies the Google Services plugin defined in the project-level file
     id("com.google.gms.google-services")
 }
@@ -30,16 +29,13 @@ android {
     defaultConfig {
         applicationId = "com.example.wardeobe"
         minSdk = 25
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Expose keys to your Kotlin code
         buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${requireProp("CLOUDINARY_CLOUD_NAME")}\"")
-        buildConfigField("String", "CLOUDINARY_API_KEY", "\"${requireProp("CLOUDINARY_API_KEY")}\"")
-        buildConfigField("String", "CLOUDINARY_API_SECRET", "\"${requireProp("CLOUDINARY_API_SECRET")}\"")
-        buildConfigField("String", "FREEPIK_API_KEY", "\"${requireProp("FREEPIK_API_KEY")}\"")
     }
 
     // ✅ STEP 4: Set NDK version for 16 KB page size alignment support
@@ -65,13 +61,33 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            // Conditionally configure signing if the properties exist.
+            // If they don't, it will fall back to default debug keystore.
+            val keystorePath = localProperties.getProperty("KEYSTORE_FILE") ?: System.getenv("KEYSTORE_FILE")
+            if (keystorePath != null && rootProject.file(keystorePath).exists()) {
+                storeFile = rootProject.file(keystorePath)
+                storePassword = localProperties.getProperty("KEYSTORE_PASSWORD") ?: System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = localProperties.getProperty("KEY_ALIAS") ?: System.getenv("KEY_ALIAS")
+                keyPassword = localProperties.getProperty("KEY_PASSWORD") ?: System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (localProperties.getProperty("KEYSTORE_FILE") != null || System.getenv("KEYSTORE_FILE") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
+            }
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            isCrunchPngs = false
         }
         debug {
             isMinifyEnabled = false
@@ -93,17 +109,12 @@ android {
         buildConfig = true // Ensure this is true to generate the BuildConfig class
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.3"
+    testOptions {
+        unitTests.isReturnDefaultValues = true
     }
 }
 
 dependencies {
-    // ✅ STEP 2: Upgraded Fresco dependencies supporting 16 KB page size
-    implementation("com.facebook.fresco:fresco:3.2.0")
-    implementation("com.facebook.fresco:imagepipeline-okhttp3:3.2.0")
-    implementation("com.facebook.fresco:animated-gif:3.2.0")
-
     // ---------------------------------------------------------------------
     // 🌐 Firebase & Google SDK Dependencies
     // ---------------------------------------------------------------------
@@ -112,7 +123,6 @@ dependencies {
     // Authentication, Storage, and Database
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
-    implementation("com.google.firebase:firebase-storage-ktx")
     implementation("com.google.firebase:firebase-functions-ktx")
 
     // Coroutines (Kept standard version)
@@ -152,6 +162,7 @@ dependencies {
 
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.8.0")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // Coil (Image Loading)
     implementation("io.coil-kt:coil-compose:2.6.0")

@@ -1,6 +1,7 @@
 package com.example.wardeobe.util
 
 import android.content.Context
+import kotlinx.coroutines.CancellationException
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -44,11 +45,15 @@ object ImageCompressor {
             } ?: return null
             // Scale to exact target size
             val scaledBitmap = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
+            if (scaledBitmap != bitmap) {
+                bitmap.recycle()
+            }
             // Compress to JPEG
             val output = ByteArrayOutputStream()
             scaledBitmap.compress(Bitmap.CompressFormat.JPEG, quality, output)
+            scaledBitmap.recycle()
             output.toByteArray()
-        } catch (e: Exception) {
+        } catch (e: CancellationException) { throw e } catch (e: Exception) {
             null
         }
     }

@@ -1,23 +1,27 @@
 package com.example.wardeobe.viewmodel
 
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.CancellationException
 import androidx.lifecycle.viewModelScope
 import com.example.wardeobe.MyApplication
 import com.example.wardeobe.model.ClothingItem
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import android.util.Log
+import javax.inject.Inject
 
-class AuthViewModel : ViewModel() {
-
-    private val auth: FirebaseAuth = Firebase.auth
-    private val db: FirebaseFirestore = Firebase.firestore
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val profileRepository: com.example.wardeobe.data.ProfileRepository,
+    private val db: FirebaseFirestore
+) : ViewModel() {
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
@@ -57,15 +61,17 @@ class AuthViewModel : ViewModel() {
                                 _authResult.value = AuthResult.Success
                             }
                             .addOnFailureListener { e ->
-                                _authResult.value = AuthResult.Error("Registration succeeded, but profile save failed.")
-                                Log.e("AuthViewModel", "Firestore save failed: $e")
+                                auth.currentUser?.delete()?.addOnCompleteListener {
+                                    _authResult.value = AuthResult.Error("Registration failed: Could not setup profile. Please try again.")
+                                    Log.e("AuthViewModel", "Firestore save failed, user rolled back: $e")
+                                }
                             }
                     } else {
                         _authResult.value = AuthResult.Error("Registration failed: ${task.exception?.message}")
                     }
                     _isLoading.value = false
                 }
-            } catch (e: Exception) {
+            } catch (e: CancellationException) { throw e } catch (e: Exception) {
                 _authResult.value = AuthResult.Error("Registration failed: ${e.message}")
                 _isLoading.value = false
             }

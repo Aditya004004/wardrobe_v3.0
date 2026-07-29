@@ -11,11 +11,14 @@ pluginManagement {
     plugins {
         id("com.android.application") version "8.13.0"
 
-        // 🌟 FIX: Plugin versions aligned with app build.gradle.kts
-        id("org.jetbrains.kotlin.android") version "1.9.10"
+        // 🌟 FIX: Plugin versions aligned with libs.versions.toml
+        id("org.jetbrains.kotlin.android") version "2.0.21"
+        id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
+        id("org.jetbrains.kotlin.kapt") version "2.0.21"
 
-        // 🌟 FIX: Add the dependency for the Google services Gradle plugin
+        // 🌟 FIX: Add the dependency for the Google services and Hilt Gradle plugins
         id("com.google.gms.google-services") version "4.4.1"
+        id("com.google.dagger.hilt.android") version "2.51"
     }
 }
 

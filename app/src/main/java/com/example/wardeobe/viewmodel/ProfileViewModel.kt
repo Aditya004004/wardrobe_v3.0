@@ -1,6 +1,7 @@
 package com.example.wardeobe.viewmodel
 
 import com.example.wardeobe.BuildConfig
+import kotlinx.coroutines.CancellationException
 import android.content.Context
 import android.net.Uri
 import android.util.Log
@@ -25,20 +26,16 @@ import java.io.IOException
 import java.util.UUID
 
 
+import com.google.firebase.functions.FirebaseFunctions
+
 @HiltViewModel
-class ProfileViewModel @Inject constructor() : ViewModel() {
+class ProfileViewModel @Inject constructor(
+    private val profileRepository: com.example.wardeobe.data.ProfileRepository,
+    private val functions: FirebaseFunctions,
+    private val auth: com.google.firebase.auth.FirebaseAuth
+) : ViewModel() {
 
-    private val auth = Firebase.auth
     private val firestore = Firebase.firestore
-
-    // Cloudinary is the primary storage for VTO profile images
-    private val cloudinary = Cloudinary(
-        ObjectUtils.asMap(
-            "cloud_name", BuildConfig.CLOUDINARY_CLOUD_NAME,
-            "api_key", BuildConfig.CLOUDINARY_API_KEY,
-            "api_secret", BuildConfig.CLOUDINARY_API_SECRET
-        )
-    )
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState = _uiState.asStateFlow()
@@ -61,21 +58,23 @@ class ProfileViewModel @Inject constructor() : ViewModel() {
 
                 withContext(Dispatchers.Main) {
                     if (userModel != null) {
+                        val url = userModel.profilePictureUrl ?: ""
                         _uiState.value = _uiState.value.copy(
-                            profilePictureUrl = userModel.profilePictureUrl ?: "",
+                            profilePictureUrl = url,
                             profilePicturePublicId = userModel.profilePicturePublicId
                         )
+                        profileRepository.updateProfilePictureUrl(url)
                     }
                     Log.d("ProfileViewModel", "Profile fetched successfully.")
                 }
-            } catch (e: Exception) {
+            } catch (e: CancellationException) { throw e } catch (e: Exception) {
                 Log.e("ProfileViewModel", "Error fetching profile: ${e.message}")
             }
         }
     }
 
     /**
-     * Uploads the image to Cloudinary (bypassing Firebase Storage) and updates Firestore.
+     * Uploads the image via Cloud Function and updates Firestore.
      */
     fun uploadProfilePicture(context: Context, uri: Uri) {
         val userId = auth.currentUser?.uid
@@ -87,52 +86,44 @@ class ProfileViewModel @Inject constructor() : ViewModel() {
         _uiState.value = _uiState.value.copy(loading = true, message = "Uploading image...")
 
         viewModelScope.launch(Dispatchers.IO) {
-            var inputStream: InputStream? = null
             try {
-                inputStream = context.contentResolver.openInputStream(uri)
-
-                if (inputStream == null) {
-                    throw Exception("Could not open input stream from URI.")
+                val compressed = com.example.wardeobe.util.ImageCompressor.compressImage(context, uri)
+                if (compressed == null) {
+                    throw Exception("Could not compress image.")
                 }
+                val base64Image = android.util.Base64.encodeToString(compressed, android.util.Base64.NO_WRAP)
 
-                // Pass the InputStream directly to Cloudinary
-                val uploadResult = cloudinary.uploader().upload(
-                    inputStream, // Use InputStream
-                    ObjectUtils.asMap(
-                        "folder", "profile_vto/$userId",
-                        "public_id", userId,
-                        "overwrite", true
-                    )
+                val data = hashMapOf(
+                    "imageBase64" to base64Image
                 )
 
-                val url = uploadResult["secure_url"] as? String
-                val publicId = uploadResult["public_id"] as? String
+                val result = functions
+                    .getHttpsCallable("uploadProfilePicture")
+                    .call(data)
+                    .await()
+
+                val responseData = result.data as? Map<*, *>
+                val url = responseData?.get("secure_url") as? String
+                val publicId = responseData?.get("public_id") as? String
 
                 if (url == null || publicId == null) {
-                    throw Exception("Cloudinary upload failed.")
+                    throw Exception("Cloud function upload failed.")
                 }
 
                 // 2. Update Firestore UserModel with the new URL
                 updateProfileUrlInDatabase(userId, url, publicId)
 
                 withContext(Dispatchers.Main) {
-                    _uiState.value = ProfileUiState(
+                    _uiState.value = _uiState.value.copy(
                         loading = false,
                         message = "Profile picture saved!",
                         profilePictureUrl = url,
                         profilePicturePublicId = publicId
                     )
                 }
-            } catch (e: Exception) {
+            } catch (e: CancellationException) { throw e } catch (e: Exception) {
                 Log.e("ProfileViewModel", "Upload failed: ${e.message}", e)
                 showError("Upload failed: Check file permissions or try another image.")
-            } finally {
-                // Safely close the InputStream regardless of success or failure
-                try {
-                    inputStream?.close()
-                } catch (e: IOException) {
-                    Log.e("ProfileViewModel", "Failed to close InputStream: ${e.message}")
-                }
             }
         }
     }
@@ -157,8 +148,11 @@ class ProfileViewModel @Inject constructor() : ViewModel() {
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                // Delete from Cloudinary
-                cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap())
+                val data = hashMapOf("publicId" to publicId)
+                functions
+                    .getHttpsCallable("deleteProfilePicture")
+                    .call(data)
+                    .await()
 
                 // Clear the URL in Firestore
                 val userRef = firestore.collection("users").document(userId)
@@ -169,15 +163,16 @@ class ProfileViewModel @Inject constructor() : ViewModel() {
                 userRef.update(updates as Map<String, Any>).await()
 
                 withContext(Dispatchers.Main) {
-                    _uiState.value = ProfileUiState(
+                    _uiState.value = _uiState.value.copy(
                         loading = false,
                         message = "Picture removed.",
-                        profilePictureUrl = ""
+                        profilePictureUrl = "",
+                        profilePicturePublicId = null
                     )
                 }
-            } catch (e: Exception) {
+            } catch (e: CancellationException) { throw e } catch (e: Exception) {
                 Log.e("ProfileViewModel", "Deletion failed: ${e.message}", e)
-                showError("Could not delete picture. (Check Cloudinary Admin API access)")
+                showError("Could not delete picture.")
             }
         }
     }

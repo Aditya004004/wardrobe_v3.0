@@ -22,6 +22,10 @@ object RepositoryModule {
 
     @Provides
     @Singleton
+    fun provideFirebaseAuth(): com.google.firebase.auth.FirebaseAuth = com.google.firebase.auth.FirebaseAuth.getInstance()
+
+    @Provides
+    @Singleton
     fun provideWardrobeRepository(
         functions: FirebaseFunctions,
         firestore: FirebaseFirestore

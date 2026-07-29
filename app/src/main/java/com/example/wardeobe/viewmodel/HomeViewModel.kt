@@ -1,6 +1,7 @@
 package com.example.wardeobe.viewmodel
 
 import androidx.compose.runtime.Immutable
+import kotlinx.coroutines.CancellationException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.wardeobe.data.WardrobeRepository
@@ -31,7 +32,8 @@ sealed interface WardrobeUiState {
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val repository: WardrobeRepository
+    private val repository: WardrobeRepository,
+    private val auth: com.google.firebase.auth.FirebaseAuth
 ) : ViewModel() {
 
     private val _wardrobeItems = MutableStateFlow<List<ClothingItem>>(emptyList())
@@ -39,6 +41,7 @@ class HomeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<WardrobeUiState>(WardrobeUiState.Loading)
 
     val uiState: StateFlow<WardrobeUiState> = _uiState
+    val wardrobeItems: StateFlow<List<ClothingItem>> = _wardrobeItems
     val filteredWardrobeItems: StateFlow<List<ClothingItem>> = combine(_wardrobeItems, _selectedCategory) { items, category ->
         if (category == "All") items else items.filter { it.category == category }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
@@ -49,12 +52,21 @@ class HomeViewModel @Inject constructor(
         _selectedCategory.value = category
     }
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing
+
     fun fetchImages() {
         viewModelScope.launch {
-            _uiState.value = WardrobeUiState.Loading
-            val uid = Firebase.auth.currentUser?.uid ?: run {
+            if (_wardrobeItems.value.isEmpty()) {
+                _uiState.value = WardrobeUiState.Loading
+            } else {
+                _isRefreshing.value = true
+            }
+
+            val uid = auth.currentUser?.uid ?: run {
                 Log.e("HomeViewModel", "User not authenticated")
                 _uiState.value = WardrobeUiState.Error("User not authenticated")
+                _isRefreshing.value = false
                 return@launch
             }
             try {
@@ -65,16 +77,18 @@ class HomeViewModel @Inject constructor(
                 } else {
                     _uiState.value = WardrobeUiState.Success(items)
                 }
-            } catch (e: Exception) {
+            } catch (e: CancellationException) { throw e } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error fetching images: ${e.message}")
                 _uiState.value = WardrobeUiState.Error(e.message ?: "Unknown error")
+            } finally {
+                _isRefreshing.value = false
             }
         }
     }
 
     fun deleteClothingItem(itemId: String, onDeletionResult: (Boolean) -> Unit) {
         viewModelScope.launch {
-            val uid = Firebase.auth.currentUser?.uid ?: run {
+            val uid = auth.currentUser?.uid ?: run {
                 onDeletionResult(false)
                 return@launch
             }
@@ -82,7 +96,7 @@ class HomeViewModel @Inject constructor(
                 repository.deleteItem(uid, itemId)
                 _wardrobeItems.update { current -> current.filter { it.id != itemId } }
                 onDeletionResult(true)
-            } catch (e: Exception) {
+            } catch (e: CancellationException) { throw e } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error deleting item: ${e.message}")
                 onDeletionResult(false)
             }

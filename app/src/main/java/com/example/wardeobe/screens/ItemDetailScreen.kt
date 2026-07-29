@@ -145,7 +145,7 @@ fun ItemDetailScreen(
                     Icon(
                         Icons.Default.Delete,
                         contentDescription = "Remove Item",
-                        tint = Color.Red.copy(alpha = 0.8f)
+                        tint = MaterialTheme.colorScheme.error
                     )
                 }
             }

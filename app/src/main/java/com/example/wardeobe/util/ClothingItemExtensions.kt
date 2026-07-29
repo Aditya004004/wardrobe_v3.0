@@ -4,5 +4,9 @@ import com.example.wardeobe.model.ClothingItem
 
 fun ClothingItem.thumbnailUrl(): String {
     // Cloudinary transformation for a 200x200 thumbnail using fill mode
-    return "${this.imageUrl}?c_fill,w_200,h_200"
+    return if (imageUrl.contains("/upload/")) {
+        imageUrl.replace("/upload/", "/upload/c_fill,w_200,h_200/")
+    } else {
+        imageUrl
+    }
 }

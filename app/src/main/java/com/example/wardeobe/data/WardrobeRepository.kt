@@ -1,6 +1,7 @@
 package com.example.wardeobe.data
 
 import com.google.firebase.functions.FirebaseFunctions
+import kotlinx.coroutines.CancellationException
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.wardeobe.model.ClothingItem
 import kotlinx.coroutines.tasks.await
@@ -56,21 +57,44 @@ class WardrobeRepository(
         return ClothingItem.fromMap(map)
     }
     /**
-     * Deletes a temporary garment image from Cloudinary.
+     * Uploads a local image URI temporarily via a Cloud Function for VTO.
+     */
+    suspend fun uploadTemporaryGarment(context: android.content.Context, uri: android.net.Uri): Map<*, *>? {
+        return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val compressed = com.example.wardeobe.util.ImageCompressor.compressImage(context, uri) ?: return@withContext null
+                val base64Image = android.util.Base64.encodeToString(compressed, android.util.Base64.NO_WRAP)
+
+                val data = hashMapOf(
+                    "imageBase64" to base64Image
+                )
+
+                val result = functions
+                    .getHttpsCallable("uploadTemporaryGarment")
+                    .call(data)
+                    .await()
+                
+                result.data as? Map<*, *>
+            } catch (e: CancellationException) { throw e } catch (e: Exception) {
+                Log.e("WardrobeRepository", "Temporary upload failed: ${e.message}", e)
+                null
+            }
+        }
+    }
+
+    /**
+     * Deletes a temporary garment image via a Cloud Function.
      * Used by OutfitViewModel after VTO generation.
      */
     suspend fun deleteTemporaryGarment(publicId: String) {
-        val cloudinary = Cloudinary(
-            ObjectUtils.asMap(
-                "cloud_name", BuildConfig.CLOUDINARY_CLOUD_NAME,
-                "api_key", BuildConfig.CLOUDINARY_API_KEY,
-                "api_secret", BuildConfig.CLOUDINARY_API_SECRET
-            )
-        )
         try {
-            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap())
+            val data = hashMapOf("publicId" to publicId)
+            functions
+                .getHttpsCallable("deleteTemporaryGarment")
+                .call(data)
+                .await()
             Log.d("WardrobeRepository", "Deleted temporary garment: $publicId")
-        } catch (e: Exception) {
+        } catch (e: CancellationException) { throw e } catch (e: Exception) {
             Log.e("WardrobeRepository", "Failed to delete temporary garment: $publicId", e)
         }
     }

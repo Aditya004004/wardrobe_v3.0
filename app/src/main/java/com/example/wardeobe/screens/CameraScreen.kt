@@ -37,14 +37,10 @@ fun CameraScreen(onCaptureComplete: (Uri?) -> Unit) {
     var cameraTargetUri by remember { mutableStateOf<Uri?>(null) }
 
     // Logic for handling the temporary file needed by the camera
-    val tempFile = remember {
-        File(context.cacheDir, "temp_image.jpg").apply {
+    val getTempUri: () -> Uri = {
+        val tempFile = File(context.cacheDir, "capture_${System.currentTimeMillis()}.jpg").apply {
             if (!exists()) createNewFile()
         }
-    }
-
-    // Function to generate the FileProvider URI
-    val getTempUri: () -> Uri = {
         FileProvider.getUriForFile(context, authority, tempFile)
     }
 

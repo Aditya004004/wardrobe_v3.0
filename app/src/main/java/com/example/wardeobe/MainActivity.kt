@@ -6,7 +6,9 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.* import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.navigation.compose.rememberNavController
 import com.example.wardeobe.ui.navigation.AppNavGraph
 import com.example.wardeobe.ui.theme.WardrobeTheme
 
@@ -17,7 +19,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             // Lift the theme state
             val systemTheme = isSystemInDarkTheme()
-            var isDark by remember { mutableStateOf(systemTheme) }
+            var isDark by rememberSaveable { mutableStateOf(systemTheme) }
 
             val toggleTheme: (Boolean) -> Unit = { shouldBeDark ->
                 isDark = shouldBeDark

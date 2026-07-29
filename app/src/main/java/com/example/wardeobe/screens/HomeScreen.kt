@@ -29,8 +29,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
-import com.example.wardeobe.util.ClothingItemExtensions
+import com.example.wardeobe.R
+import com.example.wardeobe.model.ClothingItem
+import com.example.wardeobe.util.thumbnailUrl
+import com.example.wardeobe.viewmodel.HomeViewModel
+import com.example.wardeobe.viewmodel.WardrobeUiState
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel,
@@ -118,9 +123,9 @@ fun HomeScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { onNavigateToUpload() },
-                containerColor = Color(0xFF00C48C)
+                containerColor = MaterialTheme.colorScheme.primaryContainer
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
+                Icon(Icons.Default.Add, contentDescription = "Add", tint = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         },
         bottomBar = {
@@ -259,6 +264,37 @@ fun HomeScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ClothingCard(
+    item: ClothingItem,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column {
+            Image(
+                painter = rememberAsyncImagePainter(item.thumbnailUrl()),
+                contentDescription = item.category,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(160.dp),
+                contentScale = ContentScale.Crop
+            )
+            Text(
+                text = item.category,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(8.dp)
+            )
         }
     }
 }

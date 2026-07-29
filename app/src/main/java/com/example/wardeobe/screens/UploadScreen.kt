@@ -36,9 +36,11 @@ fun UploadScreen(
     val context = LocalContext.current
     val uiState by uploadViewModel.uiState.collectAsStateWithLifecycle()
 
-    var selectedImageUri by rememberSaveable { mutableStateOf(initialImageUri?.let { Uri.parse(it) } ?: null) }
-    var selectedCategory by rememberSaveable { mutableStateOf("Top") } // Default Category
-    var categoryMenuExpanded by rememberSaveable { mutableStateOf(false) }
+    val categories = listOf("Top", "Bottom", "Outerwear", "Shoes", "Accessories")
+
+    var selectedImageUri by remember { mutableStateOf<Uri?>(initialImageUri?.let { Uri.parse(it) }) }
+    var selectedCategory by remember { mutableStateOf("Top") } // Default Category
+    var categoryMenuExpanded by remember { mutableStateOf(false) }
 
     // 🔸 Image picker launcher (if user chooses Gallery later)
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -89,7 +91,7 @@ fun UploadScreen(
                         .fillMaxWidth()
                         .height(280.dp)
                         .background(
-                            Color.LightGray.copy(alpha = 0.2f),
+                            MaterialTheme.colorScheme.surfaceVariant,
                             RoundedCornerShape(16.dp)
                         ),
                     contentAlignment = Alignment.Center
@@ -165,10 +167,11 @@ fun UploadScreen(
                 // 📤 Upload button (uses category)
                 Button(
                     onClick = {
-                        if (selectedImageUri != null && selectedCategory.isNotEmpty()) {
+                        val uri = selectedImageUri
+                        if (uri != null && selectedCategory.isNotEmpty()) {
                             uploadViewModel.uploadImageWithAI(
                                 context = context,
-                                uri = selectedImageUri!!,
+                                uri = uri,
                                 category = selectedCategory, // 🌟 PASS CATEGORY
                                 onUploadComplete = onBack
                             )

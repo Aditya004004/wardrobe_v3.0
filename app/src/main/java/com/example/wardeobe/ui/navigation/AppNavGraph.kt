@@ -4,7 +4,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -37,21 +37,11 @@ fun AppNavGraph(
     onThemeToggled: (Boolean) -> Unit
 ) {
     // 1. Instantiate ViewModels
-    val uploadViewModel: UploadViewModel = viewModel()
-    val authViewModel: AuthViewModel = viewModel()
-    val profileViewModel: ProfileViewModel = viewModel()
-
-    val homeViewModel: HomeViewModel = remember {
-        HomeViewModel(uploadViewModel)
-    }
-
-    // FIX: OutfitViewModel needs BOTH dependencies
-    val outfitViewModel: OutfitViewModel = remember {
-        OutfitViewModel(
-            profileViewModel = profileViewModel,
-            uploadViewModel = uploadViewModel
-        )
-    }
+    val uploadViewModel: UploadViewModel = hiltViewModel()
+    val authViewModel: AuthViewModel = hiltViewModel()
+    val profileViewModel: ProfileViewModel = hiltViewModel()
+    val homeViewModel: HomeViewModel = hiltViewModel()
+    val outfitViewModel: OutfitViewModel = hiltViewModel()
 
     // Determine starting route based on login status
     val startRoute = if (authViewModel.isUserLoggedIn()) "home" else "auth"
@@ -144,7 +134,7 @@ fun AppNavGraph(
 
             // Display the OutfitDisplayScreen with the local VTO mode
             OutfitDisplayScreen(
-                mode = "vto_local",
+                mode = com.example.wardeobe.screens.OutfitMode.VTO_LOCAL,
                 viewModel = outfitViewModel,
                 onBack = { navController.popBackStack() },
                 homeViewModel = homeViewModel
@@ -220,7 +210,8 @@ fun AppNavGraph(
 
         // 👗 Outfit Display/Recommendation Screen (Original route)
         composable("outfit_display/{mode}") { backStackEntry ->
-            val mode = backStackEntry.arguments?.getString("mode") ?: "create"
+            val modeString = backStackEntry.arguments?.getString("mode") ?: "create"
+            val mode = try { com.example.wardeobe.screens.OutfitMode.valueOf(modeString.uppercase()) } catch (e: Exception) { com.example.wardeobe.screens.OutfitMode.CREATE }
             OutfitDisplayScreen(
                 mode = mode,
                 viewModel = outfitViewModel,

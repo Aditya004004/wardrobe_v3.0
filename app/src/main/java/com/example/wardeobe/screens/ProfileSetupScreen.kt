@@ -38,33 +38,9 @@ fun ProfileSetupScreen(
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    // 🌟 FIX 1: Create local, mutable state for Occasion and Style (already done)
-    var selectedOccasionState by remember { mutableStateOf(viewModel.selectedOccasion) }
-    var selectedStyleState by remember { mutableStateOf(viewModel.selectedStyle) }
-
-    // 🌟 FIX 3: Create local, mutable state for Outfit Source
-    var selectedSourceState by remember {
-        mutableStateOf(if (viewModel.recommendationType == "personal") "Personal Wardrobe" else "Build New Style")
-    }
-
-    // 🌟 FIX 4: Use LaunchedEffect to sync local state back to ViewModel's string properties
-    LaunchedEffect(selectedOccasionState) {
-        viewModel.selectedOccasion = selectedOccasionState
-    }
-    LaunchedEffect(selectedStyleState) {
-        viewModel.selectedStyle = selectedStyleState
-    }
-    LaunchedEffect(selectedSourceState) { // 🌟 FIX 5: Sync Source state back to ViewModel
-        viewModel.recommendationType =
-            if (selectedSourceState == "Personal Wardrobe") "personal" else "shop"
-    }
-    // Also launch effect to initialize the local state if the ViewModel is pre-populated
-    LaunchedEffect(viewModel.selectedOccasion) { selectedOccasionState = viewModel.selectedOccasion }
-    LaunchedEffect(viewModel.selectedStyle) { selectedStyleState = viewModel.selectedStyle }
-    LaunchedEffect(viewModel.recommendationType) { // 🌟 FIX 6: Initialize Source state
-        selectedSourceState = if (viewModel.recommendationType == "personal") "Personal Wardrobe" else "Build New Style"
-    }
-
+    val selectedOccasion by viewModel.selectedOccasion.collectAsStateWithLifecycle()
+    val selectedStyle by viewModel.selectedStyle.collectAsStateWithLifecycle()
+    val recommendationType by viewModel.recommendationType.collectAsStateWithLifecycle()
 
     val bodyTypes = listOf("H", "X", "Y", "O", "A")
     val ageGroups = listOf("<20", "21-24", "25-30", "31-35", "36-45", "45+")
@@ -163,33 +139,33 @@ fun ProfileSetupScreen(
                 Text("5. Choose Outfit Parameters:", fontWeight = FontWeight.Bold)
             }
 
-            // 5. Occasion (Uses local state for instant visual update)
+            // 5. Occasion
             item(key = "occasion_selector") {
                 Text("Occasion:", fontWeight = FontWeight.Medium)
                 HorizontalScrollSelector(
                     options = occasions,
-                    selectedOption = selectedOccasionState, // 🌟 Use local state
-                    onOptionSelected = { selectedOccasionState = it } // 🌟 Update local state
+                    selectedOption = selectedOccasion,
+                    onOptionSelected = viewModel::updateSelectedOccasion
                 )
             }
 
-            // 6. Style (Uses local state for instant visual update)
+            // 6. Style
             item(key = "style_selector") {
                 Text("Style:", fontWeight = FontWeight.Medium)
                 HorizontalScrollSelector(
                     options = styles,
-                    selectedOption = selectedStyleState, // 🌟 Use local state
-                    onOptionSelected = { selectedStyleState = it } // 🌟 Update local state
+                    selectedOption = selectedStyle,
+                    onOptionSelected = viewModel::updateSelectedStyle
                 )
             }
 
-            // 7. Outfit Source (Uses local state for instant visual update)
+            // 7. Outfit Source
             item(key = "source_selector") {
                 Text("Outfit Source:", fontWeight = FontWeight.Medium)
                 SegmentedButtonRow(
                     options = listOf("Personal Wardrobe", "Build New Style"),
-                    selectedOption = selectedSourceState, // 🌟 Use local state
-                    onOptionSelected = { selectedSourceState = it } // 🌟 Update local state
+                    selectedOption = if (recommendationType == "personal") "Personal Wardrobe" else "Build New Style",
+                    onOptionSelected = { viewModel.updateRecommendationType(if (it == "Personal Wardrobe") "personal" else "shop") }
                 )
             }
 
@@ -199,22 +175,22 @@ fun ProfileSetupScreen(
                         if (profile.gender.isEmpty() ||
                             profile.bodyType.isEmpty() ||
                             profile.skinTone.isEmpty() ||
-                            viewModel.selectedOccasion.isEmpty() || // Check ViewModel state now
-                            viewModel.selectedStyle.isEmpty()
+                            selectedOccasion.isEmpty() ||
+                            selectedStyle.isEmpty()
                         ) {
                             Toast.makeText(context, "Please fill all fields!", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
 
                         // Determine the route
-                        val route = if (viewModel.recommendationType == "personal") {
+                        val route = if (recommendationType == "personal") {
                             "outfit_display/create"
                         } else {
                             "outfit_display/shop"
                         }
 
                         // Clear old image state if we are going into "shop" mode
-                        if (viewModel.recommendationType == "shop") {
+                        if (recommendationType == "shop") {
                             viewModel.resetShoppingOutfit()
                         }
 
@@ -290,15 +266,10 @@ fun BodyTypeSelector(
                         )
                     }
                 },
-                colors = ChipColors(
+                colors = AssistChipDefaults.assistChipColors(
                     containerColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
                     labelColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                    leadingIconContentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                    trailingIconContentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                    disabledContainerColor = Color.Transparent,
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                    disabledLeadingIconContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                    disabledTrailingIconContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                    leadingIconContentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
                 ),
                 border = BorderStroke(
                     width = 1.dp,
@@ -327,15 +298,10 @@ fun HorizontalScrollSelector(
             AssistChip(
                 onClick = { onOptionSelected(option) },
                 label = { Text(option, color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface) },
-                colors = ChipColors(
+                colors = AssistChipDefaults.assistChipColors(
                     containerColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
                     labelColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                    leadingIconContentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                    trailingIconContentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                    disabledContainerColor = Color.Transparent,
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                    disabledLeadingIconContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                    disabledTrailingIconContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                    leadingIconContentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
                 ),
                 border = BorderStroke(
                     width = 1.dp,

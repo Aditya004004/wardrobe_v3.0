@@ -21,31 +21,37 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.wardeobe.model.RecommendedOutfit
 import com.example.wardeobe.viewmodel.HomeViewModel
 import com.example.wardeobe.viewmodel.OutfitViewModel
-import com.example.wardeobe.viewmodel.ProfileViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
+enum class OutfitMode {
+    SHOP,
+    CREATE,
+    VTO_LOCAL
+}
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OutfitDisplayScreen(
-    mode: String,
+    mode: OutfitMode,
     viewModel: OutfitViewModel,
     onBack: () -> Unit,
     homeViewModel: HomeViewModel
 ) {
     // Collect all states for dynamic UI updates
-    val fullWardrobe by homeViewModel.wardrobeItems.collectAsState()
-    val isGeneratingShop by viewModel.isGeneratingShoppingOutfit.collectAsState()
-    val shopImageUrl by viewModel.shoppingImageUrl.collectAsState()
+    val fullWardrobe by homeViewModel.wardrobeItems.collectAsStateWithLifecycle()
+    val isGeneratingShop by viewModel.isGeneratingShoppingOutfit.collectAsStateWithLifecycle()
+    val shopImageUrl by viewModel.shoppingImageUrl.collectAsStateWithLifecycle()
 
     // 🌟 VTO STATES
-    val isGeneratingVTO by viewModel.isGeneratingVTO.collectAsState()
-    val vtoImageUrl by viewModel.vtoImageUrl.collectAsState()
+    val isGeneratingVTO by viewModel.isGeneratingVTO.collectAsStateWithLifecycle()
+    val vtoImageUrl by viewModel.vtoImageUrl.collectAsStateWithLifecycle()
 
     // Flag for VTO mode (shop mode includes the original shop logic, vto_local is the quick upload)
-    val isShopMode = mode == "shop" || mode == "vto_local"
+    val isShopMode = mode == OutfitMode.SHOP || mode == OutfitMode.VTO_LOCAL
 
-    // Check if VTO profile pic exists via the injected ProfileViewModel
-    val hasProfilePic = !viewModel.profileViewModel.uiState.collectAsState().value.profilePictureUrl.isEmpty()
+    // Check if VTO profile pic exists via OutfitViewModel state
+    val hasProfilePic by viewModel.hasProfilePicture.collectAsStateWithLifecycle()
 
     // Note: RecommendedOutfit logic is primarily for personal wardrobe matching
     val recommendedOutfit = remember(fullWardrobe) {
@@ -54,8 +60,8 @@ fun OutfitDisplayScreen(
 
     // LAUNCH EFFECT: Trigger base AI generation if needed (only for standard 'shop' mode)
     LaunchedEffect(mode) {
-        if (mode == "shop" && shopImageUrl == null && !isGeneratingShop) {
-            if (viewModel.selectedOccasion.isNotEmpty() && viewModel.selectedStyle.isNotEmpty()) {
+        if (mode == OutfitMode.SHOP && shopImageUrl == null && !isGeneratingShop) {
+            if (viewModel.selectedOccasion.value.isNotEmpty() && viewModel.selectedStyle.value.isNotEmpty()) {
                 viewModel.startShoppingOutfitGeneration()
             }
         }
@@ -85,7 +91,7 @@ fun OutfitDisplayScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // --- 1. SHOP YOUR LOOK CARD (Base Garment) ---
-            if (isShopMode && mode != "vto_local") { // Display the flat lay for standard shop generation
+            if (isShopMode && mode != OutfitMode.VTO_LOCAL) { // Display the flat lay for standard shop generation
                 AIGenerationCard(
                     title = "Shop Look (Garment Flat Lay)",
                     imageUrl = shopImageUrl,
@@ -98,12 +104,12 @@ fun OutfitDisplayScreen(
             if (isShopMode && hasProfilePic) {
                 Spacer(modifier = Modifier.height(24.dp))
                 AIGenerationCard(
-                    title = if (mode == "vto_local") "Quick Try-On Result" else "Virtual Try-On (VTO)",
+                    title = if (mode == OutfitMode.VTO_LOCAL) "Quick Try-On Result" else "Virtual Try-On (VTO)",
                     imageUrl = vtoImageUrl, // Use the VTO URL
-                    isGenerating = isGeneratingVTO || (mode == "shop" && isGeneratingShop), // Show loading if merge or base gen is running
+                    isGenerating = isGeneratingVTO || (mode == OutfitMode.SHOP && isGeneratingShop), // Show loading if merge or base gen is running
                     recommendationText = if (vtoImageUrl != null) "Your personalized try-on result." else "Merging garment onto your profile picture..."
                 )
-            } else if (isShopMode && !hasProfilePic && mode == "vto_local") {
+            } else if (isShopMode && !hasProfilePic && mode == OutfitMode.VTO_LOCAL) {
                 // Display the primary garment for local VTO fallback
                 AIGenerationCard(
                     title = "Mannequin Try-On Result",
@@ -152,7 +158,7 @@ fun AIGenerationCard(
                 when {
                     isGenerating -> {
                         CircularProgressIndicator()
-                        Text("Processing...", modifier = Modifier.padding(top = 50.dp), color = Color.Gray)
+                        Text("Processing...", modifier = Modifier.padding(top = 50.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     imageUrl != null && imageUrl.startsWith("MOCKED_") -> {
                         // Display a mock placeholder if the image is the mock result
@@ -167,7 +173,7 @@ fun AIGenerationCard(
                         )
                     }
                     else -> {
-                        Text("No image generated.", color = Color.Gray)
+                        Text("No image generated.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }

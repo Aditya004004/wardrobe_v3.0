@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.wardeobe.R
+import com.example.wardeobe.BuildConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -134,7 +135,7 @@ fun SettingsScreen(
             item {
                 SettingCard(
                     title = "About",
-                    description = "Wardrobe v1.0 — Your digital closet assistant"
+                    description = "Wardrobe v${BuildConfig.VERSION_NAME} — Your digital closet assistant"
                 )
             }
 

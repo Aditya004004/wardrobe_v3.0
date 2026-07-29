@@ -35,20 +35,28 @@ import java.util.UUID
 
 @HiltViewModel
 class OutfitViewModel @Inject constructor(
-    private val profileViewModel: ProfileViewModel,
-    private val uploadViewModel: UploadViewModel,
-    private val repository: com.example.wardeobe.data.WardrobeRepository
+    private val profileRepository: com.example.wardeobe.data.ProfileRepository,
+    private val repository: com.example.wardeobe.data.WardrobeRepository,
+    private val aiGenerationRepository: com.example.wardeobe.data.AiGenerationRepository,
+    private val auth: com.google.firebase.auth.FirebaseAuth
 ) : ViewModel() {
 
-    private val FREEPIK_API_KEY = BuildConfig.FREEPIK_API_KEY
-    private val FREEPIK_ENDPOINT = "https://api.magnific.com/v1/ai/gemini-2-5-flash-image-preview"
 
     private val _userProfile = MutableStateFlow(UserProfile())
     val userProfile: StateFlow<UserProfile> = _userProfile.asStateFlow()
 
-    var selectedOccasion: String = ""
-    var selectedStyle: String = ""
-    var recommendationType: String = "personal"
+    private val _selectedOccasion = MutableStateFlow("")
+    val selectedOccasion: StateFlow<String> = _selectedOccasion.asStateFlow()
+
+    private val _selectedStyle = MutableStateFlow("")
+    val selectedStyle: StateFlow<String> = _selectedStyle.asStateFlow()
+
+    private val _recommendationType = MutableStateFlow("personal")
+    val recommendationType: StateFlow<String> = _recommendationType.asStateFlow()
+
+    fun updateSelectedOccasion(occasion: String) { _selectedOccasion.value = occasion }
+    fun updateSelectedStyle(style: String) { _selectedStyle.value = style }
+    fun updateRecommendationType(type: String) { _recommendationType.value = type }
 
     private val _shoppingImageUrl = MutableStateFlow<String?>(null)
     val shoppingImageUrl: StateFlow<String?> = _shoppingImageUrl.asStateFlow()
@@ -60,14 +68,22 @@ class OutfitViewModel @Inject constructor(
     private val _isGeneratingVTO = MutableStateFlow(false)
     val isGeneratingVTO: StateFlow<Boolean> = _isGeneratingVTO.asStateFlow()
 
+    private val _hasProfilePicture = MutableStateFlow(false)
+    val hasProfilePicture: StateFlow<Boolean> = _hasProfilePicture.asStateFlow()
+
     private var cachedProfileUrl: String? = null
 
     private val client = OkHttpClient()
 
     init {
         viewModelScope.launch {
-            profileViewModel.uiState.collect { state ->
-                cachedProfileUrl = state.profilePictureUrl.ifEmpty { null }
+            val uid = auth.currentUser?.uid
+            if (uid != null) {
+                profileRepository.fetchProfilePictureUrl(uid)
+            }
+            profileRepository.profilePictureUrl.collect { url ->
+                cachedProfileUrl = url.ifEmpty { null }
+                _hasProfilePicture.value = url.isNotEmpty()
             }
         }
     }
@@ -91,12 +107,14 @@ class OutfitViewModel @Inject constructor(
         resetShoppingOutfit()
         _isGeneratingVTO.value = true
 
-        profileViewModel.fetchUserProfile()
-
         viewModelScope.launch {
+            val uid = auth.currentUser?.uid
+            if (uid != null) {
+                profileRepository.fetchProfilePictureUrl(uid)
+            }
             val profileUrl = cachedProfileUrl
 
-            val uploadResult = uploadViewModel.uploadTemporaryUri(context, garmentUri)
+            val uploadResult = repository.uploadTemporaryGarment(context, garmentUri)
             val publicGarmentUrl = uploadResult?.get("secure_url") as? String
             val tempPublicId = uploadResult?.get("public_id") as? String
 
@@ -127,9 +145,11 @@ class OutfitViewModel @Inject constructor(
         resetShoppingOutfit()
         _isGeneratingShoppingOutfit.value = true
 
-        profileViewModel.fetchUserProfile()
-
         viewModelScope.launch {
+            val uid = auth.currentUser?.uid
+            if (uid != null) {
+                profileRepository.fetchProfilePictureUrl(uid)
+            }
             val shopUrl = generateNewOutfitWithFreepik()
             _shoppingImageUrl.value = shopUrl
             _isGeneratingShoppingOutfit.value = false
@@ -152,41 +172,9 @@ class OutfitViewModel @Inject constructor(
         }
     }
 
-    private suspend fun initiateFreepikGeneration(prompt: String, referenceImages: JSONArray): String? =
-        withContext(Dispatchers.IO) {
-            try {
-                val jsonBody = JSONObject().apply {
-                    put("prompt", prompt)
-                    put("reference_images", referenceImages)
-                }
-
-                val requestBody = jsonBody.toString().toRequestBody("application/json".toMediaTypeOrNull())
-
-                val request = Request.Builder()
-                    .url(FREEPIK_ENDPOINT)
-                    .addHeader("x-freepik-api-key", FREEPIK_API_KEY)
-                    .addHeader("Content-Type", "application/json")
-                    .post(requestBody)
-                    .build()
-
-                val response = client.newCall(request).execute()
-                val responseBody = response.body?.string()
-
-                if (!response.isSuccessful) {
-                    Log.e("OutfitViewModel", "❌ Freepik API initial request failed: ${response.code}. Response: $responseBody")
-                    return@withContext null
-                }
-
-                val jsonResponse = JSONObject(responseBody ?: "")
-                val taskId = jsonResponse.optJSONObject("data")?.optString("task_id")
-
-                return@withContext pollFreepikTask(taskId ?: "")
-
-            } catch (e: Exception) {
-                Log.e("OutfitViewModel", "Freepik Generation Initiation Error: ${e.message}", e)
-                null
-            }
-        }
+    private suspend fun initiateFreepikGeneration(prompt: String, referenceImages: JSONArray): String? {
+        return aiGenerationRepository.generateImage(prompt, referenceImages)
+    }
 
     // -------------------------
     // 🔄 UPDATED PROMPT BLOCKS
@@ -224,63 +212,13 @@ class OutfitViewModel @Inject constructor(
 
             val detailedPrompt = buildString {
                 append("Generate a high-resolution, hyper-realistic image of a single, complete outfit in a perfectly lit, professional studio flat lay style. ")
-                append("The outfit must be ${selectedStyle} and suitable for a ${selectedOccasion} event. ")
+                append("The outfit must be ${selectedStyle.value} and suitable for a ${selectedOccasion.value} event. ")
                 append("Based on a ${profile.gender}, ${profile.bodyType} body type, and ${profile.skinTone} skin tone. ")
                 append("Focus on clear separation of the pieces on a simple, neutral background. ")
                 append("Render the fabrics with realistic texture and depth. Photorealistic, 8K quality.")
             }
 
             return@withContext initiateFreepikGeneration(detailedPrompt, JSONArray())
-        }
-
-    private suspend fun pollFreepikTask(taskId: String): String? =
-        withContext(Dispatchers.IO) {
-            val url = "https://api.magnific.com/v1/ai/gemini-2-5-flash-image-preview/$taskId"
-
-            pollingLoop@ for (attempt in 0 until 20) {
-                delay(3000)
-
-                try {
-                    val request = Request.Builder()
-                        .url(url)
-                        .addHeader("x-freepik-api-key", FREEPIK_API_KEY)
-                        .get()
-                        .build()
-
-                    val response = client.newCall(request).execute()
-                    val responseBody = response.body?.string()
-
-                    if (!response.isSuccessful || responseBody == null) {
-                        Log.e("OutfitViewModel", "❌ Polling failed with code: ${response.code}. Response: $responseBody")
-                        continue@pollingLoop
-                    }
-
-                    val json = JSONObject(responseBody)
-                    val dataObject = json.optJSONObject("data")
-                    val status = dataObject?.optString("status")
-
-                    if (status == "COMPLETED") {
-                        val generated = dataObject?.optJSONArray("generated")?.optString(0)
-
-                        if (!generated.isNullOrEmpty()) {
-                            Log.d("OutfitViewModel", "✅ AI Image Ready: $generated")
-                            return@withContext generated
-                        } else {
-                            Log.e("OutfitViewModel", "❌ COMPLETED status but no generated URL found.")
-                            return@withContext null
-                        }
-                    } else if (status == "FAILED" || status == "ERROR") {
-                        Log.e("OutfitViewModel", "❌ Freepik task FAILED. Response: $responseBody")
-                        return@withContext null
-                    }
-                } catch (e: Exception) {
-                    Log.e("OutfitViewModel", "Polling request exception: ${e.message}", e)
-                    continue@pollingLoop
-                }
-            }
-
-            Log.e("OutfitViewModel", "❌ Freepik task polling timed out")
-            return@withContext null
         }
 
     private fun cleanUpTemporaryGarment(publicId: String) {
@@ -291,7 +229,7 @@ class OutfitViewModel @Inject constructor(
 
     fun getRecommendedOutfit(fullWardrobe: List<ClothingItem>): RecommendedOutfit {
         val profile = userProfile.value
-        val isPersonal = recommendationType == "personal"
+        val isPersonal = recommendationType.value == "personal"
 
         if (!isPersonal && (_isGeneratingShoppingOutfit.value || _isGeneratingVTO.value)) {
             return RecommendedOutfit(
