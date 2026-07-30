@@ -10,7 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import com.cloudinary.Cloudinary
+
 import com.cloudinary.utils.ObjectUtils
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase

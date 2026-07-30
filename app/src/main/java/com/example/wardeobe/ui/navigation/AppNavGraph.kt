@@ -36,8 +36,9 @@ fun AppNavGraph(
     isDarkTheme: Boolean,
     onThemeToggled: (Boolean) -> Unit
 ) {
-    // 1. Instantiate ViewModels
-                    
+    val homeViewModel: HomeViewModel = hiltViewModel()
+    val outfitViewModel: OutfitViewModel = hiltViewModel()
+    val authViewModel: AuthViewModel = hiltViewModel()                
     // Determine starting route based on login status
     val startRoute = if (com.google.firebase.auth.FirebaseAuth.getInstance().currentUser != null) "home" else "auth"
 
@@ -48,7 +49,7 @@ fun AppNavGraph(
         // 🚨 Authentication Screen
         composable("auth") {
             AuthScreen(
-                authViewModel = hiltViewModel(),
+                authViewModel = authViewModel,
                 onAuthSuccess = {
                     navController.navigate("home") {
                         popUpTo("auth") { inclusive = true }
@@ -60,7 +61,7 @@ fun AppNavGraph(
         // 🏠 Home Screen (Updated with VTO navigation)
         composable("home") {
             HomeScreen(
-                homeViewModel = hiltViewModel(),
+                homeViewModel = homeViewModel,
                 onNavigateToUpload = { navController.navigate("upload?imageUri=null") },
                 onNavigateToSettings = { navController.navigate("settings") },
                 onNavigateToCreateOutfit = { navController.navigate("profile_setup") },
@@ -118,7 +119,7 @@ fun AppNavGraph(
         ) { backStackEntry ->
             val garmentUriString = backStackEntry.arguments?.getString("garmentUri")
             val context = LocalContext.current // 🌟 FIX: Get Context inside the Composable scope
-            val outfitViewModel: OutfitViewModel = hiltViewModel()
+            // using shared outfitViewModel
 
             // Trigger VTO generation immediately using the local URI
             LaunchedEffect(garmentUriString) {
@@ -131,9 +132,9 @@ fun AppNavGraph(
             // Display the OutfitDisplayScreen with the local VTO mode
             OutfitDisplayScreen(
                 mode = com.example.wardeobe.screens.OutfitMode.VTO_LOCAL,
-                viewModel = hiltViewModel(),
+                viewModel = outfitViewModel,
                 onBack = { navController.popBackStack() },
-                homeViewModel = hiltViewModel()
+                homeViewModel = homeViewModel
             )
         }
 
@@ -169,7 +170,7 @@ fun AppNavGraph(
                 onDarkModeToggled = onThemeToggled,
                 onNavigateToProfileView = { navController.navigate("profile_view") },
                 onLogout = {
-                    com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                    authViewModel.logout()
                     navController.navigate("auth") {
                         popUpTo(navController.graph.id) { inclusive = true }
                     }
@@ -180,7 +181,7 @@ fun AppNavGraph(
         // 📝 User Profile Setup Screen (Remains unchanged)
         composable("profile_setup") {
             ProfileSetupScreen(
-                viewModel = hiltViewModel(),
+                viewModel = outfitViewModel,
                 onBack = { navController.popBackStack() },
                 navController = navController
             )
@@ -195,7 +196,7 @@ fun AppNavGraph(
             if (itemId != null) {
                 ItemDetailScreen(
                     itemId = itemId,
-                    homeViewModel = hiltViewModel(),
+                    homeViewModel = homeViewModel,
                     onBack = { navController.popBackStack() }
                 )
             } else {
@@ -210,9 +211,9 @@ fun AppNavGraph(
             val mode = try { com.example.wardeobe.screens.OutfitMode.valueOf(modeString.uppercase()) } catch (e: Exception) { com.example.wardeobe.screens.OutfitMode.CREATE }
             OutfitDisplayScreen(
                 mode = mode,
-                viewModel = hiltViewModel(),
+                viewModel = outfitViewModel,
                 onBack = { navController.popBackStack() },
-                homeViewModel = hiltViewModel()
+                homeViewModel = homeViewModel
             )
         }
     }
