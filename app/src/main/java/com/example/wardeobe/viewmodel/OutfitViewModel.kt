@@ -63,6 +63,11 @@ class OutfitViewModel @Inject constructor(
     private val _isGeneratingVTO = MutableStateFlow(false)
     val isGeneratingVTO: StateFlow<Boolean> = _isGeneratingVTO.asStateFlow()
 
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
+    fun clearError() { _errorMessage.value = null }
+
     private val _hasProfilePicture = MutableStateFlow(false)
     val hasProfilePicture: StateFlow<Boolean> = _hasProfilePicture.asStateFlow()
 
@@ -95,32 +100,43 @@ class OutfitViewModel @Inject constructor(
         if (_isGeneratingVTO.value) return
 
         resetShoppingOutfit()
+        _errorMessage.value = null
         _isGeneratingVTO.value = true
 
         viewModelScope.launch {
-            val profileUrl = profileRepository.profilePictureUrl.value.ifEmpty { null }
+            try {
+                val profileUrl = profileRepository.profilePictureUrl.value.ifEmpty { null }
 
-            val uploadResult = repository.uploadTemporaryGarment(context, garmentUri)
-            val publicGarmentUrl = uploadResult?.get("secure_url") as? String
-            val tempPublicId = uploadResult?.get("public_id") as? String
+                val uploadResult = repository.uploadTemporaryGarment(context, garmentUri)
+                val publicGarmentUrl = uploadResult?.get("secure_url") as? String
+                val tempPublicId = uploadResult?.get("public_id") as? String
 
-            if (publicGarmentUrl.isNullOrEmpty()) {
-                Log.e("OutfitViewModel", "Temporary garment upload failed.")
+                if (publicGarmentUrl.isNullOrEmpty()) {
+                    Log.e("OutfitViewModel", "Temporary garment upload failed.")
+                    _isGeneratingVTO.value = false
+                    _errorMessage.value = "Temporary garment upload failed."
+                    return@launch
+                }
+
+                val vtoUrl = if (profileUrl.isNullOrEmpty()) {
+                    generateVtoImageFallback(publicGarmentUrl)
+                } else {
+                    generateVtoImage(publicGarmentUrl, profileUrl)
+                }
+
+                _vtoImageUrl.value = vtoUrl
                 _isGeneratingVTO.value = false
-                return@launch
-            }
 
-            val vtoUrl = if (profileUrl.isNullOrEmpty()) {
-                generateVtoImageFallback(publicGarmentUrl)
-            } else {
-                generateVtoImage(publicGarmentUrl, profileUrl)
-            }
-
-            _vtoImageUrl.value = vtoUrl
-            _isGeneratingVTO.value = false
-
-            if (!tempPublicId.isNullOrEmpty()) {
-                cleanUpTemporaryGarment(tempPublicId)
+                if (!tempPublicId.isNullOrEmpty()) {
+                    cleanUpTemporaryGarment(tempPublicId)
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e("OutfitViewModel", "Generation failed", e)
+                _isGeneratingVTO.value = false
+                _vtoImageUrl.value = null
+                _errorMessage.value = e.message ?: "An unexpected error occurred"
             }
         }
     }
@@ -129,15 +145,25 @@ class OutfitViewModel @Inject constructor(
         if (_isGeneratingShoppingOutfit.value || _isGeneratingVTO.value) return
 
         resetShoppingOutfit()
+        _errorMessage.value = null
         _isGeneratingShoppingOutfit.value = true
 
         viewModelScope.launch {
-            val profileUrl = profileRepository.profilePictureUrl.value.ifEmpty { null }
-            val shopUrl = generateNewOutfitWithAi()
-            _shoppingImageUrl.value = shopUrl
-            _isGeneratingShoppingOutfit.value = false
-            if (!shopUrl.isNullOrEmpty() && !profileUrl.isNullOrEmpty()) {
-                startVtoGeneration(shopUrl, profileUrl)
+            try {
+                val profileUrl = profileRepository.profilePictureUrl.value.ifEmpty { null }
+                val shopUrl = generateNewOutfitWithAi()
+                _shoppingImageUrl.value = shopUrl
+                _isGeneratingShoppingOutfit.value = false
+                if (!shopUrl.isNullOrEmpty() && !profileUrl.isNullOrEmpty()) {
+                    startVtoGeneration(shopUrl, profileUrl)
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e("OutfitViewModel", "Generation failed", e)
+                _isGeneratingShoppingOutfit.value = false
+                _shoppingImageUrl.value = null
+                _errorMessage.value = e.message ?: "An unexpected error occurred"
             }
         }
     }
@@ -147,9 +173,18 @@ class OutfitViewModel @Inject constructor(
         _vtoImageUrl.value = null
 
         viewModelScope.launch {
-            val vtoUrl = generateVtoImage(shopImageUrl, profileUrl)
-            _vtoImageUrl.value = vtoUrl
-            _isGeneratingVTO.value = false
+            try {
+                val vtoUrl = generateVtoImage(shopImageUrl, profileUrl)
+                _vtoImageUrl.value = vtoUrl
+                _isGeneratingVTO.value = false
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e("OutfitViewModel", "Generation failed", e)
+                _isGeneratingVTO.value = false
+                _vtoImageUrl.value = null
+                _errorMessage.value = e.message ?: "An unexpected error occurred"
+            }
         }
     }
 

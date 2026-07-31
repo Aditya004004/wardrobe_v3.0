@@ -46,6 +46,7 @@ fun OutfitDisplayScreen(
     // 🌟 VTO STATES
     val isGeneratingVTO by viewModel.isGeneratingVTO.collectAsStateWithLifecycle()
     val vtoImageUrl by viewModel.vtoImageUrl.collectAsStateWithLifecycle()
+    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
 
     // Flag for VTO mode (shop mode includes the original shop logic, vto_local is the quick upload)
     val isShopMode = mode == OutfitMode.SHOP || mode == OutfitMode.VTO_LOCAL
@@ -97,6 +98,19 @@ fun OutfitDisplayScreen(
                 .verticalScroll(rememberScrollState()), // Make screen scrollable
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            errorMessage?.let { msg ->
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                ) {
+                    Text(
+                        text = msg,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             // --- 1. SHOP YOUR LOOK CARD (Base Garment) ---
