@@ -36,6 +36,7 @@ android {
 
         // Expose keys to your Kotlin code
         buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${requireProp("CLOUDINARY_CLOUD_NAME")}\"")
+        buildConfigField("String", "GEMINI_API_KEY", "\"${requireProp("GEMINI_API_KEY")}\"")
     }
 
     // ✅ STEP 4: Set NDK version for 16 KB page size alignment support

@@ -13,7 +13,7 @@ To keep API keys secure, this project uses the `local.properties` file to inject
 CLOUDINARY_CLOUD_NAME=your_cloud_name_here
 CLOUDINARY_API_KEY=your_api_key_here
 CLOUDINARY_API_SECRET=your_api_secret_here
-FREEPIK_API_KEY=your_freepik_key_here
+GEMINI_API_KEY=your_gemini_key_here
 Note: Do not use quotes around the values in this file.
 
 2. Firebase Configuration (Auth & Database)
@@ -66,16 +66,16 @@ Add these credentials to your local.properties file.
 
 Go to the Media Library tab and create a dedicated folder (e.g., wardrobe_uploads) to organize your app's assets.
 
-4. Freepik AI API Setup (Magnific AI Engine)
-This project uses the Freepik API via the Magnific engine to handle AI tasks like virtual try-on image generation.
+4. Google AI Studio (Gemini Image Generation)
+This project uses the Gemini API (`gemini-3.1-flash-image`) to handle AI tasks like virtual try-on image generation.
 
-Go to Freepik Developers and log in.
+Go to Google AI Studio (https://aistudio.google.com/) and log in.
 
-Navigate to your Developer Dashboard and generate a new API Key.
+Navigate to Get API Key and create a new API Key for your project.
 
-Add this key to your local.properties file.
+Add this key to your local.properties file as `GEMINI_API_KEY`.
 
-Note: The application calls the gemini-2-5-flash-image-preview endpoint to process image tasks.
+**IMPORTANT**: While Google AI Studio offers a free tier (e.g., 500 image generations per day/month), image generation models generally require a billing account (credit card) to be attached to your Google Cloud / AI Studio account to verify your identity and prevent abuse. If you do not have a billing method attached, your API quota for image models will be set to `0`, and you will receive a `429 Quota Exceeded` error when the app tries to generate an image.
 
 5. Build & Run
 Once your local.properties and google-services.json files are in place:

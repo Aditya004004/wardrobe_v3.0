@@ -28,82 +28,83 @@ class AiGenerationRepository @Inject constructor(
     suspend fun generateImage(prompt: String, referenceImages: JSONArray = JSONArray()): String? =
         withContext(Dispatchers.IO) {
             try {
-                // Convert JSONArray to List<Map<String, String>> for Cloud Functions payload
-                val referencesList = mutableListOf<Map<String, String>>()
-                for (i in 0 until referenceImages.length()) {
-                    val refObj = referenceImages.optJSONObject(i)
-                    if (refObj != null) {
-                        val map = mutableMapOf<String, String>()
-                        val keys = refObj.keys()
-                        while (keys.hasNext()) {
-                            val key = keys.next()
-                            map[key] = refObj.getString(key)
+                // 1. Call Google AI Studio (Gemini 3.1 Flash Image) directly via REST API
+                val client = OkHttpClient()
+                val apiKey = com.example.wardeobe.BuildConfig.GEMINI_API_KEY
+                val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=$apiKey"
+
+                val partsArray = JSONArray().put(JSONObject().put("text", prompt))
+                
+                // If you want to support reference images later, you'd add them to partsArray here
+                // Note: The previous implementation completely ignored referenceImages.
+
+                val jsonBody = JSONObject().apply {
+                    put("contents", JSONArray().put(
+                        JSONObject().put("parts", partsArray)
+                    ))
+                }
+
+                val requestBody = jsonBody.toString().toRequestBody("application/json".toMediaTypeOrNull())
+                val request = Request.Builder()
+                    .url(url)
+                    .post(requestBody)
+                    .build()
+
+                val response = client.newCall(request).execute()
+                val responseString = response.body?.string()
+
+                if (!response.isSuccessful || responseString.isNullOrEmpty()) {
+                    Log.e(TAG, "❌ Gemini API Error: ${response.code} ${response.message} - $responseString")
+                    return@withContext null
+                }
+
+                val jsonResponse = JSONObject(responseString)
+                val candidates = jsonResponse.optJSONArray("candidates")
+                val firstCandidate = candidates?.optJSONObject(0)
+                val content = firstCandidate?.optJSONObject("content")
+                val responseParts = content?.optJSONArray("parts")
+                
+                var base64Image: String? = null
+                
+                if (responseParts != null) {
+                    for (i in 0 until responseParts.length()) {
+                        val part = responseParts.optJSONObject(i)
+                        val inlineData = part?.optJSONObject("inlineData")
+                        if (inlineData != null) {
+                            base64Image = inlineData.optString("data")
+                            break
                         }
-                        referencesList.add(map)
                     }
                 }
 
-                val data = hashMapOf(
-                    "prompt" to prompt,
-                    "reference_images" to referencesList
-                )
+                if (base64Image.isNullOrEmpty()) {
+                    Log.e(TAG, "❌ No image bytes returned from Gemini. Response: $responseString")
+                    return@withContext null
+                }
 
+                Log.d(TAG, "✅ Gemini Image Generated. Uploading to Cloudinary...")
+
+                // 2. Upload the Base64 image using the existing Cloud Function
+                val data = hashMapOf("imageBase64" to base64Image)
                 val result = functions
-                    .getHttpsCallable("initiateAiGeneration")
+                    .getHttpsCallable("uploadTemporaryGarment")
                     .call(data)
                     .await()
 
                 val responseData = result.data as? Map<*, *>
-                val taskId = responseData?.get("task_id") as? String
+                val generatedUrl = responseData?.get("secure_url") as? String
 
-                if (taskId.isNullOrEmpty()) {
-                    Log.e(TAG, "❌ No task_id returned.")
+                if (generatedUrl.isNullOrEmpty()) {
+                    Log.e(TAG, "❌ Cloudinary upload failed. No secure_url returned.")
                     return@withContext null
                 }
+                
+                Log.d(TAG, "✅ AI Image Ready & Uploaded: $generatedUrl")
+                return@withContext generatedUrl
 
-                return@withContext pollTask(taskId)
             } catch (e: CancellationException) { throw e } catch (e: Exception) {
                 Log.e(TAG, "generateImage Error", e)
                 null
             }
-        }
-
-    private suspend fun pollTask(taskId: String): String? =
-        withContext(Dispatchers.IO) {
-            pollingLoop@ for (attempt in 0 until 20) {
-                delay(3000)
-                Log.d(TAG, "⏳ Waiting for AI image... attempt ${attempt + 1}")
-
-                try {
-                    val data = hashMapOf("task_id" to taskId)
-                    val result = functions
-                        .getHttpsCallable("pollAiGeneration")
-                        .call(data)
-                        .await()
-
-                    val responseData = result.data as? Map<*, *>
-                    val status = responseData?.get("status") as? String
-
-                    if (status == "COMPLETED") {
-                        val generated = responseData?.get("generated_url") as? String
-                        if (!generated.isNullOrEmpty()) {
-                            Log.d(TAG, "✅ AI Image Ready: $generated")
-                            return@withContext generated
-                        } else {
-                            Log.e(TAG, "❌ COMPLETED status but no generated URL found.")
-                            return@withContext null
-                        }
-                    } else if (status == "FAILED" || status == "ERROR") {
-                        Log.e(TAG, "❌ AI task FAILED. Response: $responseData")
-                        return@withContext null
-                    }
-                } catch (e: CancellationException) { throw e } catch (e: Exception) {
-                    Log.e(TAG, "Polling request exception: ${e.message}", e)
-                    continue@pollingLoop
-                }
-            }
-
-            Log.e(TAG, "❌ AI task polling timed out")
-            null
         }
 }

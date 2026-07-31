@@ -81,7 +81,11 @@ class HomeViewModel @Inject constructor(
                 }
             } catch (e: CancellationException) { throw e } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error fetching images: ${e.message}")
-                _uiState.value = WardrobeUiState.Error(e.message ?: "Unknown error")
+                if (e.message?.contains("NOT FOUND", ignoreCase = true) == true) {
+                    _uiState.value = WardrobeUiState.Empty
+                } else {
+                    _uiState.value = WardrobeUiState.Error(e.message ?: "Unknown error")
+                }
             } finally {
                 _isRefreshing.value = false
             }

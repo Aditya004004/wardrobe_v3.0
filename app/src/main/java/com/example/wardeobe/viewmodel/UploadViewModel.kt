@@ -33,7 +33,7 @@ import com.google.firebase.functions.FirebaseFunctions
 import kotlinx.coroutines.tasks.await
 
 /**
- * Handles image upload, AI processing (Freepik Gemini), and Cloudinary upload.
+ * Handles image upload, AI processing (Gemini/Imagen), and Cloudinary upload.
  */
 @HiltViewModel
 class UploadViewModel @Inject constructor(
@@ -70,7 +70,7 @@ class UploadViewModel @Inject constructor(
                 // 🌟 USER-FACING: Generic AI processing message
                 _uiState.value = _uiState.value.copy(userMessage = "Applying AI processing...")
 
-                val aiUrl = generateWithFreepik(base64Image)
+                val aiUrl = generateWithAi(base64Image)
                 if (aiUrl == null) {
                     showError("AI generation failed or timed out.")
                     return@launch
@@ -119,7 +119,7 @@ class UploadViewModel @Inject constructor(
     }
 
     // 🤖 Generate AI image using AiGenerationRepository
-    private suspend fun generateWithFreepik(base64Image: String): String? {
+    private suspend fun generateWithAi(base64Image: String): String? {
         val imageWithPrefix = "data:image/jpeg;base64,$base64Image"
         val prompt = "Remove background and place the clothing item on a mannequin."
         return aiGenerationRepository.generateImage(prompt, JSONArray(listOf(imageWithPrefix)))

@@ -133,7 +133,7 @@ class OutfitViewModel @Inject constructor(
 
         viewModelScope.launch {
             val profileUrl = profileRepository.profilePictureUrl.value.ifEmpty { null }
-            val shopUrl = generateNewOutfitWithFreepik()
+            val shopUrl = generateNewOutfitWithAi()
             _shoppingImageUrl.value = shopUrl
             _isGeneratingShoppingOutfit.value = false
             if (!shopUrl.isNullOrEmpty() && !profileUrl.isNullOrEmpty()) {
@@ -153,7 +153,7 @@ class OutfitViewModel @Inject constructor(
         }
     }
 
-    private suspend fun initiateFreepikGeneration(prompt: String, referenceImages: JSONArray): String? {
+    private suspend fun initiateAiGeneration(prompt: String, referenceImages: JSONArray): String? {
         return aiGenerationRepository.generateImage(prompt, referenceImages)
     }
 
@@ -170,7 +170,7 @@ class OutfitViewModel @Inject constructor(
             }
 
             val referenceImages = JSONArray(listOf(outfitUrl, profileUrl))
-            return@withContext initiateFreepikGeneration(prompt, referenceImages)
+            return@withContext initiateAiGeneration(prompt, referenceImages)
         }
 
     private suspend fun generateVtoImageFallback(garmentUrl: String): String? =
@@ -184,10 +184,10 @@ class OutfitViewModel @Inject constructor(
             }
 
             val referenceImages = JSONArray(listOf(garmentUrl))
-            return@withContext initiateFreepikGeneration(prompt, referenceImages)
+            return@withContext initiateAiGeneration(prompt, referenceImages)
         }
 
-    private suspend fun generateNewOutfitWithFreepik(): String? =
+    private suspend fun generateNewOutfitWithAi(): String? =
         withContext(Dispatchers.IO) {
             val profile = userProfile.value
 
@@ -199,7 +199,7 @@ class OutfitViewModel @Inject constructor(
                 append("Render the fabrics with realistic texture and depth. Photorealistic, 8K quality.")
             }
 
-            return@withContext initiateFreepikGeneration(detailedPrompt, JSONArray())
+            return@withContext initiateAiGeneration(detailedPrompt, JSONArray())
         }
 
     private fun cleanUpTemporaryGarment(publicId: String) {
