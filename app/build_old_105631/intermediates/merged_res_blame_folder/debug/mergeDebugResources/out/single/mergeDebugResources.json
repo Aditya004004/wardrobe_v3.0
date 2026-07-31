@@ -1,0 +1,134 @@
+[
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/mipmap-xxxhdpi_ic_launcher.webp.flat",
+        "source": "com.example.wardeobe.app-main-86:/mipmap-xxxhdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/drawable_mannequin.png.flat",
+        "source": "com.example.wardeobe.app-main-86:/drawable/mannequin.png"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/xml_data_extraction_rules.xml.flat",
+        "source": "com.example.wardeobe.app-main-86:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/mipmap-xxxhdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.wardeobe.app-main-86:/mipmap-xxxhdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/drawable_ic_camera_placeholder.xml.flat",
+        "source": "com.example.wardeobe.app-main-86:/drawable/ic_camera_placeholder.xml"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/mipmap-xxhdpi_ic_launcher_foreground.webp.flat",
+        "source": "com.example.wardeobe.app-main-86:/mipmap-xxhdpi/ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.example.wardeobe.app-main-86:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/drawable_ic_clothes_placeholder.png.flat",
+        "source": "com.example.wardeobe.app-main-86:/drawable/ic_clothes_placeholder.png"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/mipmap-xxxhdpi_ic_launcher_foreground.webp.flat",
+        "source": "com.example.wardeobe.app-main-86:/mipmap-xxxhdpi/ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/mipmap-mdpi_ic_launcher.webp.flat",
+        "source": "com.example.wardeobe.app-main-86:/mipmap-mdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/xml_file_paths.xml.flat",
+        "source": "com.example.wardeobe.app-main-86:/xml/file_paths.xml"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/mipmap-xhdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.wardeobe.app-main-86:/mipmap-xhdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/drawable_ic_wardrobe_placeholder.xml.flat",
+        "source": "com.example.wardeobe.app-main-86:/drawable/ic_wardrobe_placeholder.xml"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/drawable_ic_refresh.xml.flat",
+        "source": "com.example.wardeobe.app-main-86:/drawable/ic_refresh.xml"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.example.wardeobe.app-main-86:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/mipmap-xxhdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.wardeobe.app-main-86:/mipmap-xxhdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/drawable_ic_logout_placeholder.xml.flat",
+        "source": "com.example.wardeobe.app-main-86:/drawable/ic_logout_placeholder.xml"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/mipmap-xhdpi_ic_launcher.webp.flat",
+        "source": "com.example.wardeobe.app-main-86:/mipmap-xhdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.example.wardeobe.app-main-86:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/drawable_ic_add_photo.xml.flat",
+        "source": "com.example.wardeobe.app-main-86:/drawable/ic_add_photo.xml"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/mipmap-mdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.wardeobe.app-main-86:/mipmap-mdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/mipmap-xxhdpi_ic_launcher.webp.flat",
+        "source": "com.example.wardeobe.app-main-86:/mipmap-xxhdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/drawable_ic_profile_placeholder.xml.flat",
+        "source": "com.example.wardeobe.app-main-86:/drawable/ic_profile_placeholder.xml"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/xml_backup_rules.xml.flat",
+        "source": "com.example.wardeobe.app-main-86:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/mipmap-mdpi_ic_launcher_foreground.webp.flat",
+        "source": "com.example.wardeobe.app-main-86:/mipmap-mdpi/ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.example.wardeobe.app-main-86:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/drawable_ic_gallery_placeholder.xml.flat",
+        "source": "com.example.wardeobe.app-main-86:/drawable/ic_gallery_placeholder.xml"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/mipmap-xhdpi_ic_launcher_foreground.webp.flat",
+        "source": "com.example.wardeobe.app-main-86:/mipmap-xhdpi/ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/mipmap-hdpi_ic_launcher_foreground.webp.flat",
+        "source": "com.example.wardeobe.app-main-86:/mipmap-hdpi/ic_launcher_foreground.webp"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/drawable_ic_arrow_back.xml.flat",
+        "source": "com.example.wardeobe.app-main-86:/drawable/ic_arrow_back.xml"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/mipmap-hdpi_ic_launcher_round.webp.flat",
+        "source": "com.example.wardeobe.app-main-86:/mipmap-hdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/mipmap-hdpi_ic_launcher.webp.flat",
+        "source": "com.example.wardeobe.app-main-86:/mipmap-hdpi/ic_launcher.webp"
+    },
+    {
+        "merged": "com.example.wardeobe.app-debug-84:/drawable_ic_fashion_placeholder.xml.flat",
+        "source": "com.example.wardeobe.app-main-86:/drawable/ic_fashion_placeholder.xml"
+    }
+]
